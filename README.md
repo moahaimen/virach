@@ -1,21 +1,21 @@
-<<<<<<< HEAD
-# racheeta_mobile
-Racheeta application mobile application
-=======
-# racheeta
+# Racheeta
 
-A Medical App
+Racheeta is a health-services marketplace mobile application. It allows patients to search for health service providers, make reservations, and apply for jobs. Health service providers can publish their services, offers, and jobs.
 
-## Getting Started
+## Features
+- Search and book health services.
+- Provider dashboards.
+- Job applications.
+- Authentication (Email, Google).
 
-This project is a starting point for a Flutter application.
+## Setup
+1. Ensure Flutter is installed.
+2. Run `flutter pub get` to fetch dependencies.
+3. The backend base URL is configured in `lib/core/config/app_config.dart`.
+4. Run the app with `flutter run`.
 
-A few resources to get you started if this is your first Flutter project:
+## Build
+To build a release APK, run:
+`flutter build apk --release`
 
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
-
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
->>>>>>> 38598dd (🚀 Initial push of Racheeta mobile app)
+*Note: Production release requires valid signing keys.*

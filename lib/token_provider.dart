@@ -9,19 +9,11 @@ class TokenProvider with ChangeNotifier {
   void updateToken(String newToken) {
     _accessToken = newToken;
     notifyListeners();
-    print("Access token updated: $_accessToken");
-    print("===============================");
-    print("Access token from TOKEN PROVIDER: $_accessToken");
-    print("===============================");
   }
 
   Future<void> loadTokenFromPreferences() async {
     final prefs = await SharedPreferences.getInstance();
-    _accessToken = prefs.getString("Login_access_token");
-    print("===============================");
-    print(
-        "Access token from TOKEN PROVIDER in loadTokenFromPreferences: $_accessToken");
-    print("===============================");
+    _accessToken = prefs.getString("access_token") ?? prefs.getString("Login_access_token");
     notifyListeners();
   }
 }

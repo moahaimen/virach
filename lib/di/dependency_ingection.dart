@@ -43,52 +43,26 @@ bool isTokenExpired(String token) {
 Future<void> clearStoredToken() async {
   final prefs = await SharedPreferences.getInstance();
   await prefs.remove("Login_access_token");
-  print("🚨 Token deleted. The app will now log in with mo@mo.com");
+  await prefs.remove("access_token");
+  await prefs.remove("refresh_token");
 }
 
 /// ✅ Ensures providers are registered only once.
 Future<void> setup() async {
   final prefs = await SharedPreferences.getInstance();
   String jwtToken = prefs.getString("Login_access_token") ?? '';
-  print("🔑 [Setup] Checking stored token: $jwtToken");
 
   // Check token expiration
   if (jwtToken.isNotEmpty && isTokenExpired(jwtToken)) {
-    print("⚠️ [Setup] Token expired. Clearing stored token...");
     await prefs.remove("Login_access_token");
     jwtToken = '';
   }
   locator.registerLazySingleton<SharedPreferences>(() => prefs);
 
-  // If no token, perform automatic login
   if (jwtToken.isEmpty) {
-    print("🚨 [Setup] No valid token found. Attempting automatic login...");
-    try {
-      final Dio dioForLogin = Dio(BaseOptions(contentType: "application/json"));
-      final ApiClient loginApiClient = ApiClient(dioForLogin);
-      final LoginResponse loginResponse = await loginApiClient.login({
-        "email": "mo@mo.com",
-        "password": "1",
-      });
-
-      if (loginResponse.access != null) {
-        jwtToken = loginResponse.access!;
-        print("✅ [Setup] Login successful. New Token: $jwtToken");
-        await prefs.setString("Login_access_token", jwtToken);
-      } else {
-        print("❌ [Setup] Login failed. No token received.");
-      }
-    } catch (e) {
-      print("❌ [Setup] Error during login: ${e.toString()}");
-      jwtToken = '';
-    }
+    // No valid token available. RootDecider will navigate to Welcome/Login.
   }
 
-  if (jwtToken.isEmpty) {
-    print("🛑 [Setup] Warning: No valid token available. Providers may fail.");
-  }
-
-  print("📌 [Setup] Final Token Before Provider Initialization: $jwtToken");
 
   // **💡 Unregister existing providers before registering them again**
   if (locator.isRegistered<DoctorRetroDisplayGetProvider>()) {

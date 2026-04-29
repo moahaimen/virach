@@ -310,7 +310,7 @@
 //     }
 //     // Handle password (use a default if it's Gmail registration)
 //     final password =
-//         _isGmailRegistration ? "10000001" : _passwordController.text.trim();
+//         _isGmailRegistration ? "${DateTime.now().millisecondsSinceEpoch}Rach@!" : _passwordController.text.trim();
 //
 //     showDialog(
 //       context: context,

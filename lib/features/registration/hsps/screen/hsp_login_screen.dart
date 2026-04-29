@@ -240,16 +240,16 @@ class _HSPLoginPageState extends State<HSPLoginPage> {
       }
 
       final response = await _dio.post(
-        "https://racheeta.pythonanywhere.com/login/",
+        "https://racheeta.pythonanywhere.com/firebase-auth/",
         data: {
           "email": googleEmail.trim(),
-          "password": "10000001", // the default password
+          "firebase_uid": user.uid,
         },
       );
 
       if (response.statusCode == 200) {
-        final accessToken = response.data["access"];
-        final refreshToken = response.data["refresh"];
+        final accessToken = response.data["access_token"] ?? response.data["access"];
+        final refreshToken = response.data["refresh_token"] ?? response.data["refresh"];
         final userDetails = await _fetchHSPUserDetails(accessToken);
         if (userDetails == null) {
           throw Exception("Failed to fetch user details from the server.");

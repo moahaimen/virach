@@ -389,7 +389,7 @@ class _PatientRegistrationProfileFormPageState
           ? "phonereg${DateTime.now().millisecondsSinceEpoch}@racheeta.app"
           : _emailController.text.trim();
 
-      final password = isFirebaseFlow ? "10000001" : _passwordController.text.trim();
+      final password = isFirebaseFlow ? "${DateTime.now().millisecondsSinceEpoch}Rach@!" : _passwordController.text.trim();
 
       debugPrint('📧 Prepared email: $email');
       debugPrint('🔐 Prepared password: $password');

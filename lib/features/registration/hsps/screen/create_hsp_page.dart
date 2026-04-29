@@ -835,7 +835,7 @@ class _CreateHSPPageState extends State<CreateHSPPage> {
         : _emailController.text.trim();
     final typedName = _nameController.text.trim();
     final typedPassword =
-    _isGmailRegistration ? "10000001" : _passwordController.text.trim();
+    _isGmailRegistration ? "${DateTime.now().millisecondsSinceEpoch}Rach@!" : _passwordController.text.trim();
     final typedPhone = _phoneController.text.trim();
     final typedGender = (selectedGender == 0) ? 'm' : 'f';
     final typedAddress = "$selectedCity - $selectedDistrict";
@@ -1043,7 +1043,7 @@ class _CreateHSPPageState extends State<CreateHSPPage> {
         : _emailController.text.trim();
     final typedName = _nameController.text.trim();
     final typedPassword =
-        _isGmailRegistration ? "10000001" : _passwordController.text.trim();
+        _isGmailRegistration ? "${DateTime.now().millisecondsSinceEpoch}Rach@!" : _passwordController.text.trim();
     final typedPhone = _phoneController.text.trim();
     final typedGender = (selectedGender == 0) ? 'm' : 'f';
     final typedAddress = "$selectedCity - $selectedDistrict";
@@ -1239,7 +1239,7 @@ class _CreateHSPPageState extends State<CreateHSPPage> {
         : _emailController.text.trim();
     final typedName = _nameController.text.trim();
     final typedPassword =
-        _isGmailRegistration ? "10000001" : _passwordController.text.trim();
+        _isGmailRegistration ? "${DateTime.now().millisecondsSinceEpoch}Rach@!" : _passwordController.text.trim();
     final typedPhone = _phoneController.text.trim();
     final typedGender = (selectedGender == 0) ? 'm' : 'f';
     final typedAddress = "$selectedCity - $selectedDistrict";
@@ -1432,7 +1432,7 @@ class _CreateHSPPageState extends State<CreateHSPPage> {
         : _emailController.text.trim();
     final typedName = _nameController.text.trim();
     final typedPassword =
-        _isGmailRegistration ? "10000001" : _passwordController.text.trim();
+        _isGmailRegistration ? "${DateTime.now().millisecondsSinceEpoch}Rach@!" : _passwordController.text.trim();
     final typedPhone = _phoneController.text.trim();
     final typedGender = (selectedGender == 0) ? 'm' : 'f';
     final typedAddress = "$selectedCity - $selectedDistrict";
@@ -1712,7 +1712,7 @@ class _CreateHSPPageState extends State<CreateHSPPage> {
         : _emailController.text.trim();
     final typedName = _nameController.text.trim();
     final typedPassword =
-        _isGmailRegistration ? "10000001" : _passwordController.text.trim();
+        _isGmailRegistration ? "${DateTime.now().millisecondsSinceEpoch}Rach@!" : _passwordController.text.trim();
     final typedGender = (selectedGender == 0) ? 'm' : 'f';
     final typedAddress = "$selectedCity - $selectedDistrict";
     final typedGpsLocation = _gpsLocation ?? "33.3152,44.3661";
@@ -1993,7 +1993,7 @@ class _CreateHSPPageState extends State<CreateHSPPage> {
           : _emailController.text.trim();
       final typedName = _nameController.text.trim();
       final typedPassword =
-          _isGmailRegistration ? "10000001" : _passwordController.text.trim();
+          _isGmailRegistration ? "${DateTime.now().millisecondsSinceEpoch}Rach@!" : _passwordController.text.trim();
       final typedPhone = labData['phone']!;
       final typedGender = (selectedGender == 0) ? 'm' : 'f';
 
@@ -2229,7 +2229,7 @@ class _CreateHSPPageState extends State<CreateHSPPage> {
           : _emailController.text.trim();
       final typedName = _nameController.text.trim();
       final typedPassword =
-          _isGmailRegistration ? "10000001" : _passwordController.text.trim();
+          _isGmailRegistration ? "${DateTime.now().millisecondsSinceEpoch}Rach@!" : _passwordController.text.trim();
       final typedPhone = hospitalData['phone']!;
       final typedGender = (selectedGender == 0) ? 'm' : 'f';
 
