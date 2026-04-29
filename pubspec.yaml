@@ -1,0 +1,143 @@
+name: racheeta
+description: "A Medical App"
+publish_to: 'none'
+
+version: 1.0.0+1
+
+environment:
+  sdk: '>=3.4.3 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+  cupertino_icons: ^1.0.6
+  carousel_slider: ^5.0.0
+  youtube_player_flutter: ^9.1.1
+  file_picker: ^10.1.2
+  image_picker: ^1.1.2
+#  image_cropper: ^8.1.0
+  url_launcher: ^6.0.9
+#  sign_in_with_apple: ^2.0.0
+  device_info_plus: ^11.3.3 # To detect the platform
+#  maps package
+  geolocator: ^13.0.4
+  latlong2: ^0.9.1
+  flutter_map: ^8.1.1
+#  flutter_map_directions: ^0.0.8
+#  google_maps_flutter: ^2.1.1
+  path_provider: ^2.1.3
+# database and firebase
+  sqflite: ^2.3.3+1
+  shared_preferences: ^2.2.3
+  flutter_localization: ^0.3.2
+  firebase_core: ^3.13.0
+  firebase_messaging: ^15.2.5
+#  cloud_firestore: ^5.6.6
+  firebase_storage: ^12.4.5
+  firebase_auth: any
+  google_sign_in: ^6.2.1
+  uuid: ^4.4.2
+  dio: ^5.4.3+1
+  firebase_app_check: ^0.3.2+5
+  provider: ^6.1.2
+  fl_chart: ^0.70.2
+  flutter_launcher_icons: ^0.14.3
+  flutter_local_notifications: ^19.1.0
+  timezone: ^0.10.0
+  sms_autofill: ^2.4.1
+
+  intl_utils: ^2.8.7
+  mailer: ^6.0.0
+  intl: ^0.19.0
+  flutter_time_picker_spinner: ^2.0.0
+  # retrofit and networking
+  retrofit: ^4.4.1
+  injectable: ^2.1.0
+  logging: ^1.2.0
+  get_it: ^8.0.3
+  cached_network_image: ^3.4.1
+  qr_flutter: ^4.0.0
+  screenshot: ^3.0.0
+  share_plus: ^7.2.2        # ✅ new
+  connectivity_plus: ^6.1.4
+  internet_connection_checker_plus: ^2.0.0
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^5.0.0
+  retrofit_generator: ^9.1.2
+  build_runner: ^2.4.12
+  json_serializable: ^6.8.0
+  built_value_generator: ^8.9.2
+  injectable_generator: ^2.1.3
+  jwt_decoder: ^2.0.1
+  in_app_review: ^2.0.6
+  lottie: ^3.1.0
+
+#  assets_audio_player: ^3.0.3
+flutter:
+  uses-material-design: true
+  generate: true  # This is needed for localization generation
+
+  assets:
+    - assets/
+    - assets/iraq_flag.png
+    - assets/splash/
+    - assets/icons/microscope.png
+    - assets/icons/beuty.png
+    - assets/icons/phone_call.png
+    - assets/icons/physio_therapist.png
+    - assets/icons/physio_thrapist3.png
+    - assets/icons/appointment.png
+    - assets/icons/pharmacy.png
+    - assets/icons/x-ray.png
+    - assets/icons/doctor_visit.png
+    - assets/icons/doctor_icon.png
+    - assets/icons/female_doctor_icon.png
+    - assets/offers/analyze.png
+    - assets/offers/ciezer_del.png
+    - assets/offers/eye_lazek.png
+    - assets/offers/hair.png
+    - assets/offers/hair_plazma.png
+    - assets/offers/hair_slide.png
+    - assets/offers/hair_slide1.png
+    - assets/offers/pretty.png
+    - assets/offers/tajmeel.png
+    - assets/offers/tajmeel_plasma.png
+    - assets/offers/teeth_helth.png
+    - assets/offers/teethcleanin.png
+    - assets/offers/whiting_teeth.png
+    - assets/icons/hospital.png
+    - assets/icons/hospital1.png
+    - assets/icons/medical_centre.png
+    - assets/icons/nurse.png
+    - assets/icons/phusicaltherapist.png
+    - assets/icons/pharmacist.png
+    - assets/icons/patient1.png
+    - assets/icons/doctor.png
+    - assets/icons/healthserviceprovider.png
+    - assets/icons/beauty.png
+    - assets/icons/dentist.png
+    - assets/icons/hospital_home_icon.png
+    - assets/icons/medical_centre_home_icon.png
+    - assets/icons/nurse.png
+    - assets/icons/venterian.png
+    - assets/icons/pshyco.png
+    - assets/sounds/notification.wav
+    - assets/sounds/notification2.mp3
+    - assets/images/default_avatar.png
+    - assets/images/logo2.png
+    - assets/images/offer_header.png
+    - assets/lottie/wifi_off.json
+  fonts:
+    - family: Aref Ruqaa
+      fonts:
+        - asset: assets/fonts/ArefRuqaa-Regular.ttf
+    - family: Cairo
+      fonts:
+        - asset: assets/fonts/Cairo-Regular.ttf
+        - asset: assets/fonts/Cairo-Bold.ttf
+          weight: 700
+
+
+

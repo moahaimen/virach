@@ -1,0 +1,2 @@
+/Users/moahaimentalib/StudioProjects/virach/android/app/.cxx/Debug/5b1iu2y5/x86_64/CMakeFiles/edit_cache.dir
+/Users/moahaimentalib/StudioProjects/virach/android/app/.cxx/Debug/5b1iu2y5/x86_64/CMakeFiles/rebuild_cache.dir

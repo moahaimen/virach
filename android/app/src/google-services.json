@@ -1,0 +1,62 @@
+{
+  "project_info": {
+    "project_number": "907743711846",
+    "project_id": "racheeta-f7aab",
+    "storage_bucket": "racheeta-f7aab.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:907743711846:android:ea70fbc8862a337a1113a7",
+        "android_client_info": {
+          "package_name": "racheeta.com.racheeta"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "907743711846-d4c0eugdssnddt3n1dhh0bgt0agdp3oj.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "racheeta.com.racheeta",
+            "certificate_hash": "8552f773cbb802066c329ef5e525d5029f956937"
+          }
+        },
+        {
+          "client_id": "907743711846-fbnk03mkekegp2i59f6p201n7se6jj8t.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "racheeta.com.racheeta",
+            "certificate_hash": "d742231ba482d0db46ba5336854011545ea77247"
+          }
+        },
+        {
+          "client_id": "907743711846-4024ipvlks46ektksspl54scp17ubtpd.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCcK0HMku416sEoeVjb7PrbFdhvl-_OnNE"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "907743711846-4024ipvlks46ektksspl54scp17ubtpd.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "907743711846-3p35de8rck25hmqf34jk2a6fe3ulgflj.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "racheeta.com.racheeta"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
