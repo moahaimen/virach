@@ -1,25 +1,45 @@
 import 'dart:async';
+
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:internet_connection_checker_plus/internet_connection_checker_plus.dart';
 
 class ConnectivityService {
-  final _controller = StreamController<bool>.broadcast();
+  final StreamController<bool> _controller = StreamController<bool>.broadcast();
+  final Connectivity _connectivity = Connectivity();
+
+  StreamSubscription<dynamic>? _connectivitySubscription;
+  Timer? _pollingTimer;
+  bool? _lastStatus;
+  bool _disposed = false;
+
   Stream<bool> get connectionStatusStream => _controller.stream;
 
   ConnectivityService() {
-    // react to network-type changes
-    Connectivity().onConnectivityChanged.listen((_) => _verify());
+    _connectivitySubscription =
+        _connectivity.onConnectivityChanged.listen((_) => _verify());
 
-    // poll periodically (handles “wifi without internet”)
-    Timer.periodic(const Duration(seconds: 10), (_) => _verify());
+    _pollingTimer = Timer.periodic(
+      const Duration(seconds: 15),
+      (_) => _verify(),
+    );
 
-    _verify(); // initial state
+    _verify();
   }
 
   Future<void> _verify() async {
+    if (_disposed) return;
+
     final hasInternet = await InternetConnection().hasInternetAccess;
-    _controller.add(hasInternet); // true = online, false = offline
+    if (_disposed || hasInternet == _lastStatus) return;
+
+    _lastStatus = hasInternet;
+    _controller.add(hasInternet);
   }
 
-  void dispose() => _controller.close();
+  void dispose() {
+    _disposed = true;
+    _connectivitySubscription?.cancel();
+    _pollingTimer?.cancel();
+    _controller.close();
+  }
 }
