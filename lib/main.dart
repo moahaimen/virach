@@ -29,8 +29,29 @@ Future<void> main() async {
 }
 
 Future<void> _initializeFirebaseServices() async {
-  await Firebase.initializeApp();
+  final firebaseReady = await _initializeFirebaseCore();
+  if (!firebaseReady) return;
 
+  await _initializeFirebaseMessaging();
+  await _initializeFirebaseAppCheck();
+}
+
+Future<bool> _initializeFirebaseCore() async {
+  try {
+    await Firebase.initializeApp();
+    return true;
+  } catch (e) {
+    if (foundation.kDebugMode) {
+      debugPrint(
+        'Firebase Core initialization skipped. Add lib/firebase_options.dart '
+        'and pass DefaultFirebaseOptions.currentPlatform to enable Firebase on web. Error: $e',
+      );
+    }
+    return false;
+  }
+}
+
+Future<void> _initializeFirebaseMessaging() async {
   try {
     await FirebaseMessaging.instance.requestPermission(
       alert: true,
@@ -48,11 +69,11 @@ Future<void> _initializeFirebaseServices() async {
       debugPrint('Firebase Messaging initialization skipped: $e');
     }
   }
+}
 
+Future<void> _initializeFirebaseAppCheck() async {
   try {
-    if (foundation.kIsWeb) {
-      return;
-    }
+    if (foundation.kIsWeb) return;
 
     await FirebaseAppCheck.instance.activate(
       androidProvider: foundation.kDebugMode
