@@ -1,10 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:racheeta/theme/app_theme.dart';
+
 import '../../../providers/header_option_provider.dart';
 import 'header_option_widget.dart';
 
 class HeaderSection extends StatelessWidget {
-  final Map<String, String> iconPaths = {
+  HeaderSection({super.key});
+
+  final Map<String, String> iconPaths = const {
     'حجز في عيادة': 'assets/icons/appointment.png',
     'طبيب دولي': 'assets/icons/appointment.png',
     'أشعات و رنين': 'assets/icons/x-ray.png',
@@ -16,44 +20,81 @@ class HeaderSection extends StatelessWidget {
     'مركز طبي': 'assets/icons/medical_centre_home_icon.png',
     'مستشفى': 'assets/icons/hospital_home_icon.png',
     'صيدلية': 'assets/icons/pharmacy.png',
-    // 'زيارة منزلية': 'assets/icons/doctor_visit.png',
-    //'بيطري': 'assets/icons/venterian.png',
     'تمريض': 'assets/icons/nurse.png',
   };
 
   @override
   Widget build(BuildContext context) {
-    print('Building HeaderSection widget...');
-    final headerOptionProvider = Provider.of<HeaderOptionProvider>(context);
+    final headerOptionProvider = Provider.of<HeaderOptionProvider>(context, listen: false);
+    final width = MediaQuery.of(context).size.width;
+    final crossAxisCount = width >= 900 ? 6 : width >= 600 ? 4 : 3;
 
     return Padding(
-      padding: const EdgeInsets.all(8.0),
-      child: GridView.builder(
-        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-          crossAxisCount: 3,
-          crossAxisSpacing: 10,
-          mainAxisSpacing: 10,
-          childAspectRatio: 1.0, // Adjust aspect ratio to fit more content
-        ),
-        itemCount: iconPaths.keys.length,
-        itemBuilder: (context, index) {
-          String label = iconPaths.keys.elementAt(index);
-          String iconPath = iconPaths[label] ?? 'assets/icons/beuty.png';
-          print('Building grid item: $label with iconPath: $iconPath');
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          _SectionHeader(
+            title: 'ماذا تحتاج اليوم؟',
+            subtitle: 'اختر الخدمة الصحية واحجز خلال دقائق',
+          ),
+          const SizedBox(height: 14),
+          GridView.builder(
+            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: crossAxisCount,
+              crossAxisSpacing: 12,
+              mainAxisSpacing: 12,
+              childAspectRatio: 0.92,
+            ),
+            itemCount: iconPaths.length,
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            itemBuilder: (context, index) {
+              final label = iconPaths.keys.elementAt(index);
+              final iconPath = iconPaths[label] ?? 'assets/icons/appointment.png';
 
-          return GestureDetector(
-            onTap: () {
-              print('Tapped on: $label');
-              headerOptionProvider.selectService(label);
-              print(
-                  'Service selected in provider: ${headerOptionProvider.selectedService}');
+              return GestureDetector(
+                onTap: () => headerOptionProvider.selectService(label),
+                child: HeaderOption(iconPath: iconPath, label: label),
+              );
             },
-            child: HeaderOption(iconPath: iconPath, label: label),
-          );
-        },
-        shrinkWrap: true,
-        physics: const NeverScrollableScrollPhysics(),
+          ),
+        ],
       ),
+    );
+  }
+}
+
+class _SectionHeader extends StatelessWidget {
+  const _SectionHeader({required this.title, required this.subtitle});
+
+  final String title;
+  final String subtitle;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Container(
+          width: 5,
+          height: 34,
+          decoration: BoxDecoration(
+            color: RacheetaColors.primary,
+            borderRadius: BorderRadius.circular(99),
+          ),
+        ),
+        const SizedBox(width: 10),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(title, style: Theme.of(context).textTheme.titleLarge),
+              const SizedBox(height: 2),
+              Text(subtitle, style: Theme.of(context).textTheme.bodySmall),
+            ],
+          ),
+        ),
+      ],
     );
   }
 }
