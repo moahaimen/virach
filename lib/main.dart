@@ -1,72 +1,72 @@
+import 'package:flutter/foundation.dart' as foundation;
 import 'package:flutter/material.dart';
+import 'package:firebase_app_check/firebase_app_check.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
-import 'package:flutter/foundation.dart' as foundation;
-import 'package:firebase_app_check/firebase_app_check.dart';
-import 'package:racheeta/providers/app_providers.dart';      // buildAppProviders(...)
-import 'package:racheeta/routing/root_decider.dart';
-import 'package:racheeta/services/connectivity_check_service.dart';
-import 'package:racheeta/theme/app_theme.dart';
-import 'package:timezone/data/latest.dart' as tz;
-import 'package:shared_preferences/shared_preferences.dart';
-import 'package:provider/provider.dart';
-import 'package:racheeta/providers/theme_provider.dart';     // ThemeProvider for Consumer
 import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:provider/provider.dart';
+import 'package:racheeta/providers/app_providers.dart';
+import 'package:racheeta/providers/theme_provider.dart';
+import 'package:racheeta/routing/root_decider.dart';
+import 'package:racheeta/theme/app_theme.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:timezone/data/latest.dart' as tz;
+
 import 'di/dependency_ingection.dart';
-import 'widgets/connectivity_snackbar.dart'; // ⬅︎ add import
+import 'widgets/connectivity_snackbar.dart';
 
-
-late ConnectivityService connectivityService; // 👈 Global instance
-void main() async {
+Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  final prefs = await SharedPreferences.getInstance();
+  await PrefsService.init(prefs);
   await setup();
+  await _initializeFirebaseServices();
 
-  // 1) Initialize Firebase
-  await Firebase.initializeApp();
-  await PrefsService.init();  // ✅ load once here
-  // 2) iOS notification permissions (no-op on Android)
-  final settings = await FirebaseMessaging.instance.requestPermission(
-    alert: true,
-    badge: true,
-    sound: true,
-  );
-  debugPrint('⚙️ Notification permission: ${settings.authorizationStatus}');
-
-  // 3) Listen for FCM token refreshes
-  FirebaseMessaging.instance.onTokenRefresh.listen((newToken) {
-    debugPrint('🔄 [onTokenRefresh] FCM token: $newToken');
-  });
-
-  // 4) Grab the initial FCM token
-  try {
-    final token = await FirebaseMessaging.instance.getToken();
-    debugPrint('🎫 [getToken] FCM token: $token');
-  } catch (e) {
-    debugPrint('❌ Error getting FCM token: $e');
-  }
-
-  // 5) Activate Firebase App Check
-  if (foundation.kDebugMode) {
-    await FirebaseAppCheck.instance.activate(
-      androidProvider: AndroidProvider.debug,
-    );
-    debugPrint("🚀 Firebase App Check activated in DEBUG mode.");
-  } else {
-    await FirebaseAppCheck.instance.activate(
-      androidProvider: AndroidProvider.playIntegrity,
-    );
-    debugPrint("🔒 Firebase App Check activated with Play Integrity.");
-  }
-
-  // 6) Initialize timezone data
   tz.initializeTimeZones();
 
-  // 7) Load SharedPreferences and pass it to buildAppProviders
-  final prefs = await SharedPreferences.getInstance();
-// ✅ Initialize global connectivity service
-  connectivityService = ConnectivityService();
-
   runApp(MyApp(prefs: prefs));
+}
+
+Future<void> _initializeFirebaseServices() async {
+  await Firebase.initializeApp();
+
+  try {
+    await FirebaseMessaging.instance.requestPermission(
+      alert: true,
+      badge: true,
+      sound: true,
+    );
+
+    FirebaseMessaging.instance.onTokenRefresh.listen((_) {
+      if (foundation.kDebugMode) {
+        debugPrint('FCM token refreshed.');
+      }
+    });
+  } catch (e) {
+    if (foundation.kDebugMode) {
+      debugPrint('Firebase Messaging initialization skipped: $e');
+    }
+  }
+
+  try {
+    if (foundation.kIsWeb) {
+      return;
+    }
+
+    await FirebaseAppCheck.instance.activate(
+      androidProvider: foundation.kDebugMode
+          ? AndroidProvider.debug
+          : AndroidProvider.playIntegrity,
+      appleProvider: foundation.kDebugMode
+          ? AppleProvider.debug
+          : AppleProvider.appAttest,
+    );
+  } catch (e) {
+    if (foundation.kDebugMode) {
+      debugPrint('Firebase App Check initialization skipped: $e');
+    }
+  }
 }
 
 class MyApp extends StatelessWidget {
@@ -75,14 +75,14 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Wrap our entire widget tree in all providers (including ThemeProvider)
+    final appPrefs = prefs ?? PrefsService.prefs;
+
     return buildAppProviders(
-      prefs: prefs!,
+      prefs: appPrefs,
       child: const AppEntry(),
     );
   }
 }
-
 
 class AppEntry extends StatelessWidget {
   const AppEntry({super.key});
@@ -93,7 +93,7 @@ class AppEntry extends StatelessWidget {
       builder: (context, themeProvider, _) {
         return MaterialApp(
           debugShowCheckedModeBanner: false,
-          title: 'Service Provider App',
+          title: 'Racheeta',
           themeMode: themeProvider.themeMode,
           theme: lightTheme,
           darkTheme: darkTheme,
@@ -105,7 +105,6 @@ class AppEntry extends StatelessWidget {
           supportedLocales: const [Locale('ar', '')],
           locale: const Locale('ar', ''),
           home: const RootDecider(),
-          // 👇 inject the SnackBar listener globally
           builder: (context, child) => Stack(
             children: [
               child!,
@@ -121,8 +120,8 @@ class AppEntry extends StatelessWidget {
 class PrefsService {
   static late SharedPreferences _prefs;
 
-  static Future<void> init() async {
-    _prefs = await SharedPreferences.getInstance();
+  static Future<void> init([SharedPreferences? prefs]) async {
+    _prefs = prefs ?? await SharedPreferences.getInstance();
   }
 
   static SharedPreferences get prefs => _prefs;
