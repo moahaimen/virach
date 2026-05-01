@@ -1,123 +1,148 @@
 import 'package:flutter/material.dart';
 import 'package:racheeta/features/doctors/screens/search_doctor_screen.dart';
 import 'package:racheeta/features/screens/hsp_search_screen.dart';
+import 'package:racheeta/theme/app_theme.dart';
+
 import '../../../features/doctors/screens/specialty_doctors_screen.dart';
 
 class HeaderOption extends StatelessWidget {
+  HeaderOption({super.key, required this.iconPath, required this.label});
+
   final String iconPath;
   final String label;
 
-  HeaderOption({required this.iconPath, required this.label});
-  Map<String, String> specialtyMapping = {
+  final Map<String, String> specialtyMapping = const {
     'اشعة': 'أشعات و رنين',
     'سونار': 'أشعات و رنين',
     'مفراس': 'أشعات و رنين',
     'رنين': 'أشعات و رنين',
   };
+
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: () {
-        // Navigate to different screens based on the label
-        if (label == 'حجز في عيادة') {
-          Navigator.of(context).push(
-            MaterialPageRoute(
-              builder: (context) => SearchDoctorPage(),
-            ),
-          );
-        } else if (label == 'اسنان') {
-          // Navigate to Dentist specialty page
-          Navigator.of(context).push(
-            MaterialPageRoute(
-              builder: (context) => SpecialtyDoctorsPage(specialty: 'اسنان'),
-            ),
-          );
-        } else if (label == 'طبيب دولي') {
-          Navigator.of(context).push(
-            MaterialPageRoute(
-              builder: (context) => SpecialtyDoctorsPage(
-                specialty: 'طبيب دولي',
-                isInternational: true, // Key flag
-              ),
-            ),
-          );
-        } else if (label == 'نفسية') {
-          // Navigate to Psychology specialty page
-          Navigator.of(context).push(
-            MaterialPageRoute(
-              builder: (context) => SpecialtyDoctorsPage(specialty: 'نفسية'),
-            ),
-          );
-        } else if (label == 'أشعات و رنين') {
-          // Go to a doctor listing for x-ray/sonar
-          Navigator.of(context).push(
-            MaterialPageRoute(
-              builder: (context) =>
-                  SpecialtyDoctorsPage(specialty: 'xsonarrays'),
-            ),
-          );
-        } else if (specialtyMapping.containsKey(label)) {
-          Navigator.of(context).push(
-            MaterialPageRoute(
-              builder: (context) => SpecialtyDoctorsPage(
-                specialty: specialtyMapping[label]!, // Unified specialty
-              ),
-            ),
-          );
-        } else {
-          // Map the label to corresponding HSP type
-          String serviceType = getServiceTypeFromLabel(label);
-          print("serviceType $serviceType");
-          Navigator.of(context).push(
-            MaterialPageRoute(
-              builder: (context) => HSPSearchScreen(hspType: serviceType),
-            ),
-          );
-        }
-      },
-      child: Card(
-        elevation: 5,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
-        ),
-        child: Padding(
-          padding: const EdgeInsets.all(8.0),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Expanded(
-                child: Image.asset(
-                  iconPath,
-                  fit: BoxFit.contain,
-                ),
-              ),
-              SizedBox(height: 8),
-              Text(
-                label,
-                textAlign: TextAlign.center,
-                style:
-                    const TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(20),
+        onTap: () => _openService(context),
+        child: Ink(
+          decoration: BoxDecoration(
+            color: Theme.of(context).cardColor,
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(color: RacheetaColors.border),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.035),
+                blurRadius: 14,
+                offset: const Offset(0, 8),
               ),
             ],
+          ),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 12),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Container(
+                  width: 48,
+                  height: 48,
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: RacheetaColors.mintLight.withOpacity(0.7),
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  child: Image.asset(
+                    iconPath,
+                    fit: BoxFit.contain,
+                    errorBuilder: (_, __, ___) => const Icon(
+                      Icons.medical_services_outlined,
+                      color: RacheetaColors.primary,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 10),
+                Text(
+                  label,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  textAlign: TextAlign.center,
+                  style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                        fontSize: 13.5,
+                        height: 1.2,
+                      ),
+                ),
+              ],
+            ),
           ),
         ),
       ),
     );
   }
 
-  // Function to map the label to the appropriate service type
+  void _openService(BuildContext context) {
+    if (label == 'حجز في عيادة') {
+      Navigator.of(context).push(MaterialPageRoute(builder: (_) => SearchDoctorPage()));
+      return;
+    }
+
+    if (label == 'اسنان') {
+      Navigator.of(context).push(
+        MaterialPageRoute(builder: (_) => SpecialtyDoctorsPage(specialty: 'اسنان')),
+      );
+      return;
+    }
+
+    if (label == 'طبيب دولي') {
+      Navigator.of(context).push(
+        MaterialPageRoute(
+          builder: (_) => SpecialtyDoctorsPage(
+            specialty: 'طبيب دولي',
+            isInternational: true,
+          ),
+        ),
+      );
+      return;
+    }
+
+    if (label == 'نفسية') {
+      Navigator.of(context).push(
+        MaterialPageRoute(builder: (_) => SpecialtyDoctorsPage(specialty: 'نفسية')),
+      );
+      return;
+    }
+
+    if (label == 'أشعات و رنين') {
+      Navigator.of(context).push(
+        MaterialPageRoute(builder: (_) => SpecialtyDoctorsPage(specialty: 'xsonarrays')),
+      );
+      return;
+    }
+
+    if (specialtyMapping.containsKey(label)) {
+      Navigator.of(context).push(
+        MaterialPageRoute(
+          builder: (_) => SpecialtyDoctorsPage(specialty: specialtyMapping[label]!),
+        ),
+      );
+      return;
+    }
+
+    final serviceType = getServiceTypeFromLabel(label);
+    Navigator.of(context).push(
+      MaterialPageRoute(builder: (_) => HSPSearchScreen(hspType: serviceType)),
+    );
+  }
+
   String getServiceTypeFromLabel(String label) {
     switch (label) {
       case 'مستشفى':
-        return 'Hospital'; // matches if (widget.hspType == 'Hospital')
+        return 'Hospital';
       case 'صيدلية':
-        return 'Pharmacy'; // matches if (widget.hspType == 'Pharmacy')
+        return 'Pharmacy';
       case 'علاج طبيعي':
-        return 'Therapist'; // matches if (widget.hspType == 'Therapist')
-      // case 'زيارة منزلية':
-      //   return 'Nurse'; // matches if (widget.hspType == 'Nurse')
+        return 'Therapist';
       case 'مركز طبي':
-        return 'MedicalCenter'; // then add else if (widget.hspType == 'MedicalCenter')
+        return 'MedicalCenter';
       case 'تجميل':
         return 'BeautyCenter';
       case 'مختبرات':
@@ -134,7 +159,6 @@ class HeaderOption extends StatelessWidget {
         return 'xsonarrays';
       case 'طبيب دولي':
         return 'internationaldoctor';
-      // etc...
       default:
         return 'Unknown';
     }
