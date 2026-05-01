@@ -1,47 +1,41 @@
 import 'package:flutter/material.dart';
+import 'package:racheeta/theme/app_theme.dart';
 
 class FeaturedSection extends StatelessWidget {
+  const FeaturedSection({super.key});
+
   @override
   Widget build(BuildContext context) {
-    return Container(
-      color: Colors.blue[50],
-      padding: const EdgeInsets.all(16.0),
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16),
       child: Container(
-        color: Colors.teal,
-        child: Column(
+        padding: const EdgeInsets.all(18),
+        decoration: BoxDecoration(
+          color: RacheetaColors.card,
+          borderRadius: BorderRadius.circular(24),
+          border: Border.all(color: RacheetaColors.border),
+        ),
+        child: Row(
           children: [
-            const SizedBox(height: 8),
-            const Text(
-              'للاعلان اتصل بنا',
-              style: TextStyle(
-                fontSize: 20,
-                color: Colors.white,
-                fontWeight: FontWeight.bold,
+            Container(
+              width: 62,
+              height: 62,
+              decoration: BoxDecoration(
+                color: RacheetaColors.mintLight,
+                borderRadius: BorderRadius.circular(20),
               ),
+              child: const Icon(Icons.verified_outlined, color: RacheetaColors.primary, size: 34),
             ),
-            const SizedBox(height: 8),
-            const Text(
-              'حجوزاتك معنا تضمنلك الحصول على افضل الاطباء والمعالجين ',
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                fontSize: 16,
-                color: Colors.white,
-                fontWeight: FontWeight.bold,
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('حجز صحي أوضح وأسرع', style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w900)),
+                  const SizedBox(height: 5),
+                  Text('اختر الخدمة، قارن الخيارات، واحجز من مزودي خدمات قريبين منك.', style: Theme.of(context).textTheme.bodySmall),
+                ],
               ),
-            ),
-            const SizedBox(height: 16),
-
-            // ✨ FIX — use Theme-based text style
-            ElevatedButton(
-              onPressed: () {},
-              style: ElevatedButton.styleFrom(
-                foregroundColor: Colors.white,
-                textStyle: Theme.of(context)
-                    .textTheme
-                    .labelLarge!                // inherit:true
-                    .copyWith(fontFamily: 'Cairo'),
-              ),
-              child: const Text('التفاصيل'),
             ),
           ],
         ),
