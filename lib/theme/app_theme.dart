@@ -1,137 +1,244 @@
-// lib/theme/app_themes.dart
-
 import 'package:flutter/material.dart';
 
-/// Light‐mode theme
+class RacheetaColors {
+  const RacheetaColors._();
+
+  static const Color primary = Color(0xFF17B3A3);
+  static const Color primaryHover = Color(0xFF119C90);
+  static const Color softMint = Color(0xFFA9D6CF);
+  static const Color mintLight = Color(0xFFCFE5E1);
+  static const Color surface = Color(0xFFF4F6F5);
+  static const Color card = Color(0xFFFFFFFF);
+  static const Color textPrimary = Color(0xFF2C3135);
+  static const Color textSecondary = Color(0xFF7E8788);
+  static const Color border = Color(0xFFDDE7E4);
+  static const Color warning = Color(0xFFF59E0B);
+  static const Color danger = Color(0xFFDC2626);
+  static const Color success = Color(0xFF16A34A);
+
+  static const Color darkBackground = Color(0xFF0D1418);
+  static const Color darkSurface = Color(0xFF111C22);
+  static const Color darkCard = Color(0xFF16242B);
+  static const Color darkBorder = Color(0xFF25333A);
+  static const Color darkTextPrimary = Color(0xFFF3F7F6);
+  static const Color darkTextSecondary = Color(0xFFA8B3B5);
+}
+
 final ThemeData lightTheme = ThemeData(
+  useMaterial3: true,
   brightness: Brightness.light,
   fontFamily: 'Cairo',
-  scaffoldBackgroundColor: Colors.white,
-  cardColor: Colors.white,
+  scaffoldBackgroundColor: RacheetaColors.surface,
+  cardColor: RacheetaColors.card,
+  colorScheme: ColorScheme.fromSeed(
+    seedColor: RacheetaColors.primary,
+    brightness: Brightness.light,
+    primary: RacheetaColors.primary,
+    secondary: RacheetaColors.primaryHover,
+    surface: RacheetaColors.card,
+    error: RacheetaColors.danger,
+  ),
   appBarTheme: const AppBarTheme(
-    backgroundColor: Colors.teal,
-    iconTheme: IconThemeData(color: Colors.white),
+    elevation: 0,
+    centerTitle: true,
+    backgroundColor: RacheetaColors.card,
+    foregroundColor: RacheetaColors.textPrimary,
+    iconTheme: IconThemeData(color: RacheetaColors.textPrimary),
     titleTextStyle: TextStyle(
       fontFamily: 'Cairo',
       fontSize: 20,
-      fontWeight: FontWeight.bold,
-      color: Colors.white,
+      fontWeight: FontWeight.w800,
+      color: RacheetaColors.textPrimary,
     ),
   ),
   textTheme: const TextTheme(
-    displayLarge: TextStyle(fontFamily: 'Cairo'),
-    displayMedium: TextStyle(fontFamily: 'Cairo'),
-    displaySmall: TextStyle(fontFamily: 'Cairo'),
-    headlineLarge: TextStyle(fontFamily: 'Cairo'),
-    headlineMedium: TextStyle(fontFamily: 'Cairo'),
-    headlineSmall: TextStyle(fontFamily: 'Cairo'),
-    titleLarge: TextStyle(fontFamily: 'Cairo'),
-    titleMedium: TextStyle(fontFamily: 'Cairo'),
-    titleSmall: TextStyle(fontFamily: 'Cairo'),
-    bodyLarge: TextStyle(fontFamily: 'Cairo'),
-    bodyMedium: TextStyle(fontFamily: 'Cairo'),
-    bodySmall: TextStyle(fontFamily: 'Cairo'),
-    labelLarge: TextStyle(fontFamily: 'Cairo'),
-    labelMedium: TextStyle(fontFamily: 'Cairo'),
-    labelSmall: TextStyle(fontFamily: 'Cairo'),
+    displayLarge: TextStyle(color: RacheetaColors.textPrimary, fontWeight: FontWeight.w800),
+    displayMedium: TextStyle(color: RacheetaColors.textPrimary, fontWeight: FontWeight.w800),
+    displaySmall: TextStyle(color: RacheetaColors.textPrimary, fontWeight: FontWeight.w700),
+    headlineLarge: TextStyle(color: RacheetaColors.textPrimary, fontWeight: FontWeight.w800),
+    headlineMedium: TextStyle(color: RacheetaColors.textPrimary, fontWeight: FontWeight.w700),
+    headlineSmall: TextStyle(color: RacheetaColors.textPrimary, fontWeight: FontWeight.w700),
+    titleLarge: TextStyle(color: RacheetaColors.textPrimary, fontWeight: FontWeight.w700),
+    titleMedium: TextStyle(color: RacheetaColors.textPrimary, fontWeight: FontWeight.w700),
+    titleSmall: TextStyle(color: RacheetaColors.textPrimary, fontWeight: FontWeight.w600),
+    bodyLarge: TextStyle(color: RacheetaColors.textPrimary, height: 1.45),
+    bodyMedium: TextStyle(color: RacheetaColors.textSecondary, height: 1.45),
+    bodySmall: TextStyle(color: RacheetaColors.textSecondary, height: 1.35),
+    labelLarge: TextStyle(color: RacheetaColors.textPrimary, fontWeight: FontWeight.w700),
+    labelMedium: TextStyle(color: RacheetaColors.textSecondary, fontWeight: FontWeight.w600),
+    labelSmall: TextStyle(color: RacheetaColors.textSecondary, fontWeight: FontWeight.w600),
+  ),
+  iconTheme: const IconThemeData(color: RacheetaColors.primary),
+  cardTheme: CardThemeData(
+    color: RacheetaColors.card,
+    elevation: 0,
+    margin: EdgeInsets.zero,
+    shape: RoundedRectangleBorder(
+      borderRadius: BorderRadius.circular(22),
+      side: const BorderSide(color: RacheetaColors.border),
+    ),
   ),
   bottomNavigationBarTheme: const BottomNavigationBarThemeData(
-    backgroundColor: Colors.blue,
-    selectedItemColor: Colors.white,
-    unselectedItemColor: Colors.white70,
+    backgroundColor: RacheetaColors.card,
+    selectedItemColor: RacheetaColors.primary,
+    unselectedItemColor: RacheetaColors.textSecondary,
+    type: BottomNavigationBarType.fixed,
+    elevation: 12,
   ),
-  iconTheme: const IconThemeData(color: Colors.teal),
   floatingActionButtonTheme: const FloatingActionButtonThemeData(
-    backgroundColor: Colors.teal,
+    backgroundColor: RacheetaColors.primary,
     foregroundColor: Colors.white,
+    elevation: 2,
   ),
   elevatedButtonTheme: ElevatedButtonThemeData(
     style: ElevatedButton.styleFrom(
-      backgroundColor: Colors.teal,
+      backgroundColor: RacheetaColors.primary,
       foregroundColor: Colors.white,
-      textStyle: const TextStyle(fontWeight: FontWeight.bold),
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.all(Radius.circular(8)),
+      minimumSize: const Size.fromHeight(52),
+      elevation: 0,
+      textStyle: const TextStyle(
+        fontFamily: 'Cairo',
+        fontWeight: FontWeight.w800,
+        fontSize: 16,
       ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
     ),
   ),
-  inputDecorationTheme: const InputDecorationTheme(
+  outlinedButtonTheme: OutlinedButtonThemeData(
+    style: OutlinedButton.styleFrom(
+      foregroundColor: RacheetaColors.textPrimary,
+      minimumSize: const Size.fromHeight(52),
+      side: const BorderSide(color: RacheetaColors.border),
+      textStyle: const TextStyle(
+        fontFamily: 'Cairo',
+        fontWeight: FontWeight.w700,
+        fontSize: 15,
+      ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+    ),
+  ),
+  textButtonTheme: TextButtonThemeData(
+    style: TextButton.styleFrom(
+      foregroundColor: RacheetaColors.primaryHover,
+      textStyle: const TextStyle(fontFamily: 'Cairo', fontWeight: FontWeight.w700),
+    ),
+  ),
+  inputDecorationTheme: InputDecorationTheme(
     filled: true,
-    fillColor: Colors.white70,
+    fillColor: RacheetaColors.card,
+    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
     border: OutlineInputBorder(
-      borderSide: BorderSide(color: Colors.black26),
+      borderRadius: BorderRadius.circular(16),
+      borderSide: const BorderSide(color: RacheetaColors.border),
+    ),
+    enabledBorder: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(16),
+      borderSide: const BorderSide(color: RacheetaColors.border),
     ),
     focusedBorder: OutlineInputBorder(
-      borderSide: BorderSide(color: Colors.teal),
+      borderRadius: BorderRadius.circular(16),
+      borderSide: const BorderSide(color: RacheetaColors.primary, width: 1.5),
     ),
-    labelStyle: TextStyle(color: Colors.black87),
-    hintStyle: TextStyle(color: Colors.black45),
+    errorBorder: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(16),
+      borderSide: const BorderSide(color: RacheetaColors.danger),
+    ),
+    labelStyle: const TextStyle(color: RacheetaColors.textSecondary),
+    hintStyle: const TextStyle(color: RacheetaColors.textSecondary),
+    prefixIconColor: RacheetaColors.primary,
+  ),
+  snackBarTheme: SnackBarThemeData(
+    backgroundColor: RacheetaColors.textPrimary,
+    contentTextStyle: const TextStyle(color: Colors.white, fontFamily: 'Cairo'),
+    behavior: SnackBarBehavior.floating,
+    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
   ),
 );
 
-/// Dark‐mode theme
 final ThemeData darkTheme = ThemeData(
+  useMaterial3: true,
   brightness: Brightness.dark,
   fontFamily: 'Cairo',
-  scaffoldBackgroundColor: const Color(0xFF121212),
-  cardColor: const Color(0xFF1E1E1E),
+  scaffoldBackgroundColor: RacheetaColors.darkBackground,
+  cardColor: RacheetaColors.darkCard,
+  colorScheme: ColorScheme.fromSeed(
+    seedColor: RacheetaColors.primary,
+    brightness: Brightness.dark,
+    primary: RacheetaColors.primary,
+    secondary: RacheetaColors.softMint,
+    surface: RacheetaColors.darkCard,
+    error: RacheetaColors.danger,
+  ),
   appBarTheme: const AppBarTheme(
-    backgroundColor: Color(0xFF1F1F1F),
-    iconTheme: IconThemeData(color: Colors.white),
+    elevation: 0,
+    centerTitle: true,
+    backgroundColor: RacheetaColors.darkSurface,
+    foregroundColor: RacheetaColors.darkTextPrimary,
+    iconTheme: IconThemeData(color: RacheetaColors.darkTextPrimary),
     titleTextStyle: TextStyle(
       fontFamily: 'Cairo',
       fontSize: 20,
-      fontWeight: FontWeight.bold,
-      color: Colors.white,
+      fontWeight: FontWeight.w800,
+      color: RacheetaColors.darkTextPrimary,
     ),
   ),
   textTheme: const TextTheme(
-    displayLarge: TextStyle(color: Colors.white),
-    displayMedium: TextStyle(color: Colors.white),
-    displaySmall: TextStyle(color: Colors.white),
-    headlineLarge: TextStyle(color: Colors.white),
-    headlineMedium: TextStyle(color: Colors.white),
-    headlineSmall: TextStyle(color: Colors.white),
-    titleLarge: TextStyle(color: Colors.white),
-    titleMedium: TextStyle(color: Colors.white),
-    titleSmall: TextStyle(color: Colors.white),
-    bodyLarge: TextStyle(color: Colors.white),
-    bodyMedium: TextStyle(color: Colors.white70),
-    bodySmall: TextStyle(color: Colors.white60),
-    labelLarge: TextStyle(color: Colors.white),
-    labelMedium: TextStyle(color: Colors.white70),
-    labelSmall: TextStyle(color: Colors.white54),
+    titleLarge: TextStyle(color: RacheetaColors.darkTextPrimary, fontWeight: FontWeight.w700),
+    titleMedium: TextStyle(color: RacheetaColors.darkTextPrimary, fontWeight: FontWeight.w700),
+    titleSmall: TextStyle(color: RacheetaColors.darkTextPrimary, fontWeight: FontWeight.w600),
+    bodyLarge: TextStyle(color: RacheetaColors.darkTextPrimary, height: 1.45),
+    bodyMedium: TextStyle(color: RacheetaColors.darkTextSecondary, height: 1.45),
+    bodySmall: TextStyle(color: RacheetaColors.darkTextSecondary, height: 1.35),
+    labelLarge: TextStyle(color: RacheetaColors.darkTextPrimary, fontWeight: FontWeight.w700),
+  ),
+  iconTheme: const IconThemeData(color: RacheetaColors.primary),
+  cardTheme: CardThemeData(
+    color: RacheetaColors.darkCard,
+    elevation: 0,
+    margin: EdgeInsets.zero,
+    shape: RoundedRectangleBorder(
+      borderRadius: BorderRadius.circular(22),
+      side: const BorderSide(color: RacheetaColors.darkBorder),
+    ),
   ),
   bottomNavigationBarTheme: const BottomNavigationBarThemeData(
-    backgroundColor: Color(0xFF1A1A1A),
-    selectedItemColor: Colors.tealAccent,
-    unselectedItemColor: Colors.grey,
-  ),
-  iconTheme: const IconThemeData(color: Colors.tealAccent),
-  floatingActionButtonTheme: const FloatingActionButtonThemeData(
-    backgroundColor: Colors.tealAccent,
-    foregroundColor: Colors.black,
+    backgroundColor: RacheetaColors.darkSurface,
+    selectedItemColor: RacheetaColors.primary,
+    unselectedItemColor: RacheetaColors.darkTextSecondary,
+    type: BottomNavigationBarType.fixed,
   ),
   elevatedButtonTheme: ElevatedButtonThemeData(
     style: ElevatedButton.styleFrom(
-      backgroundColor: Colors.tealAccent,
-      foregroundColor: Colors.black,
-      textStyle: const TextStyle(fontWeight: FontWeight.bold),
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.all(Radius.circular(8)),
+      backgroundColor: RacheetaColors.primary,
+      foregroundColor: Colors.white,
+      minimumSize: const Size.fromHeight(52),
+      elevation: 0,
+      textStyle: const TextStyle(
+        fontFamily: 'Cairo',
+        fontWeight: FontWeight.w800,
+        fontSize: 16,
       ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
     ),
   ),
-  inputDecorationTheme: const InputDecorationTheme(
+  inputDecorationTheme: InputDecorationTheme(
     filled: true,
-    fillColor: Color(0xFF1F1F1F),
+    fillColor: RacheetaColors.darkCard,
+    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
     border: OutlineInputBorder(
-      borderSide: BorderSide(color: Colors.white24),
+      borderRadius: BorderRadius.circular(16),
+      borderSide: const BorderSide(color: RacheetaColors.darkBorder),
+    ),
+    enabledBorder: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(16),
+      borderSide: const BorderSide(color: RacheetaColors.darkBorder),
     ),
     focusedBorder: OutlineInputBorder(
-      borderSide: BorderSide(color: Colors.tealAccent),
+      borderRadius: BorderRadius.circular(16),
+      borderSide: const BorderSide(color: RacheetaColors.primary, width: 1.5),
     ),
-    labelStyle: TextStyle(color: Colors.white70),
-    hintStyle: TextStyle(color: Colors.white38),
+    labelStyle: const TextStyle(color: RacheetaColors.darkTextSecondary),
+    hintStyle: const TextStyle(color: RacheetaColors.darkTextSecondary),
+    prefixIconColor: RacheetaColors.primary,
   ),
 );
