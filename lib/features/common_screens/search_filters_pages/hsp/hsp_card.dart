@@ -1,5 +1,3 @@
-import 'dart:math';
-
 import 'package:flutter/material.dart';
 import '../../../../constansts/constants.dart';
 import '../../../../utitlites/buid_stars.dart'; // Make sure this exists and is imported
@@ -8,57 +6,34 @@ class HSPCard extends StatelessWidget {
   final Map<String, dynamic> hsp;
   final VoidCallback onTap;
 
-  HSPCard({required this.hsp, required this.onTap});
+  const HSPCard({super.key, required this.hsp, required this.onTap});
 
   @override
   Widget build(BuildContext context) {
-    final double averageRating = (hsp['rating'] as double?) ?? 0.0;
-    final double rating = hsp['rating'] ?? 3.5;
-    final int numReviews = hsp['reviews'] ??
-        hsp['reviewsCount'] ??
-        hsp['numReviews'] ??
-        0; // ✅ unified fallback
+    final double averageRating =
+        (hsp['rating'] as num?)?.toDouble() ??
+        (hsp['reviewsAvg'] as num?)?.toDouble() ??
+        0.0;
+    final int numReviews =
+        (hsp['reviews'] as int?) ??
+        (hsp['reviewsCount'] as int?) ??
+        (hsp['numReviews'] as int?) ??
+        0;
 
-    // Determine the type of HSP dynamically
-    final bool isDoctor = hsp.containsKey('user') && hsp['user'] is Map;
-    final bool isHospital = hsp.containsKey('hospitalName');
-    final bool isPharmacy = hsp.containsKey('pharmacyName');
-    final bool isTherapist = hsp.containsKey('therapistName');
-    final bool isNurse = hsp.containsKey('nurseName');
-    final bool isMedicalCenter = hsp.containsKey('centerName');
-    final bool isBeautyCenter = hsp.containsKey('beautyCenterName');
-    final bool isLab = hsp.containsKey('laboratoryName');
-
-    final String name = isDoctor
-        ? hsp['user']['fullName'] ?? 'اسم غير معروف'
-        : isHospital
-        ? hsp['hospitalName'] ?? 'اسم غير معروف'
-        : isPharmacy
-        ? hsp['pharmacyName'] ?? 'اسم غير معروف'
-        : isBeautyCenter
-        ? hsp['beautyCenterName'] ?? 'اسم غير معروف'
-        : isTherapist
-        ? hsp['therapistName'] ?? 'اسم غير معروف'
-        : isNurse
-        ? hsp['nurseName'] ?? 'اسم غير معروف'
-        : isMedicalCenter || isBeautyCenter
-        ? hsp['centerName'] ?? 'اسم غير معروف'
-        : isLab
-        ? hsp['laboratoryName'] ?? 'اسم غير معروف'
-        : 'اسم غير معروف';
-
-    final String specialty = hsp['specialty'] ?? 'تخصص غير معروف';
-    final String bio = hsp['bio'] ?? 'لا يوجد وصف';
-    final String address = hsp['address'] ?? 'عنوان غير معروف';
-    final String profileImage = hsp['profileImage'] ??
-        (isDoctor &&
-            hsp['user'] != null &&
-            hsp['user']['profileImage'] != null
-            ? hsp['user']['profileImage']
-            : 'assets/icons/default.png');
-    final String availabilityTime = hsp['availabilityTime'] ?? 'غير متوفر';
-    final bool isAdvertised = hsp['advertise'] ?? false;
-    final String reviewsCountStr = numReviews.toString(); // ✅ use the one you just unified
+    final String name = (hsp['name'] ?? hsp['user']?['fullName'] ?? 'اسم غير معروف').toString();
+    final String specialty = (hsp['specialty'] ?? 'تخصص غير معروف').toString();
+    final String bio = (hsp['bio'] ?? hsp['description'] ?? 'لا يوجد وصف').toString();
+    final String address = (hsp['address'] ?? 'عنوان غير معروف').toString();
+    final String profileImage =
+        (hsp['profileImage'] ?? hsp['user']?['profileImage'] ?? '').toString();
+    final String availabilityTime =
+        (hsp['availabilityTime'] ?? 'غير متوفر').toString();
+    final bool isAdvertised = hsp['advertise'] == true;
+    final ImageProvider avatarImage = profileImage.startsWith('http')
+        ? NetworkImage(profileImage)
+        : profileImage.startsWith('assets/')
+            ? AssetImage(profileImage) as ImageProvider
+            : const AssetImage('assets/images/default_avatar.png');
 
     return Padding(
       padding: const EdgeInsets.only(bottom: 16.0),
@@ -91,9 +66,7 @@ class HSPCard extends StatelessWidget {
                 children: [
                   CircleAvatar(
                     radius: 40,
-                    backgroundImage: profileImage.startsWith('http')
-                        ? NetworkImage(profileImage)
-                        : AssetImage(profileImage) as ImageProvider,
+                    backgroundImage: avatarImage,
                   ),
                   const SizedBox(width: 16),
                   Expanded(
@@ -101,7 +74,7 @@ class HSPCard extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(name, style: kDoctorCardNameTextStyle),
-                        if (isDoctor || specialty.isNotEmpty)
+                        if (specialty.isNotEmpty)
                           Text(specialty,
                               style: kDoctorCardSpecialtyTextStyle),
                         const SizedBox(height: 8),
@@ -123,7 +96,7 @@ class HSPCard extends StatelessWidget {
                             ...buildStars(averageRating, size: 16),
                             const SizedBox(width: 4),
                             Text(
-                              '($reviewsCountStr)',
+                              '($numReviews)',
                               style: const TextStyle(
                                 fontSize: 12,
                                 color: Colors.grey,

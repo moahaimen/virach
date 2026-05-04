@@ -142,25 +142,46 @@ class DoctorRetroDisplayGetProvider with ChangeNotifier {
       "firebase_uid": firebaseUid,
       "fcm": fcm, // Added to payload
     };
-  //
+
+    payload.removeWhere((_, value) => value == null);
 
 
     print(">>> [createUser] Payload: $payload");
 
     try {
-      // Use the existing _apiClient (which already has the JWT token set in headers)
-      final createdUser = await _apiClient.createUser(payload);
+      // Account creation is public. Use a clean client so a stale/expired HSP
+      // token cannot be sent with the signup request.
+      final publicApiClient = ApiClient(Dio());
+      final createdUser = await publicApiClient.createUser(payload);
       print(">>> [createUser] User created: ${createdUser.toJson()}");
       return createdUser;
     } on DioException catch (e) {
       print(">>> [ERROR] DioException: ${e.response?.data}");
       print(">>> [ERROR] Status Code: ${e.response?.statusCode}");
       print(">>> [ERROR] Headers: ${e.response?.headers}");
-      throw Exception("Failed to create user: ${e.response?.data['message']}");
+      throw Exception("Failed to create user: ${_formatDioError(e)}");
     } catch (e) {
       print(">>> [ERROR] Unexpected error: $e");
       throw Exception("User creation failed");
     }
+  }
+
+  String _formatDioError(DioException e) {
+    final data = e.response?.data;
+    if (data == null) return e.message ?? 'unknown error';
+    if (data is String) {
+      final lower = data.toLowerCase();
+      if (lower.contains('<!doctype html') || lower.contains('<html')) {
+        return 'server error (${e.response?.statusCode ?? 'unknown status'})';
+      }
+      return data;
+    }
+    if (data is Map) {
+      final message = data['message'] ?? data['detail'] ?? data['error'];
+      if (message != null) return message.toString();
+      return data.entries.map((entry) => '${entry.key}: ${entry.value}').join(', ');
+    }
+    return data.toString();
   }
 
   Future<DoctorModel?> createDoctor(
@@ -179,31 +200,12 @@ class DoctorRetroDisplayGetProvider with ChangeNotifier {
       }) async {
     print(">>> [createDoctor] Starting doctor creation...");
 
-    // Convert your `bool` to the required 0/1:
-    final isInternationalInt = isInternationalBool ? 1 : 0;
-
-    // Build the user sub-object exactly as the server wants
-    // NOTE: Possibly you need `is_active`, `is_staff`, etc.
-    // which might be missing in your user object.
-    // If your userModel has them set, that's fine; or forcibly set them.
-    final Map<String, dynamic> userPayload = {
-      "id": userModel.id,
-      "email": userModel.email,
-      "full_name": userModel.fullName,
-      "role": userModel.role,
-      "profile_image": userModel.profileImage, // or null
-      "gps_location":
-          userModel.gpsLocation, // "33.3152 44.3661" from createUser
-      "phone_number": userModel.phoneNumber,
-      "is_active": userModel.isActive ?? true, // default to true
-      "is_staff": userModel.isStaff ?? false, // default to false
-      "gender": userModel.gender, // or null
-      "availability_time": availabilityTime, // e.g. "3pm-9pm"
-      "firebase_uid": userModel.firebaseUid, // or null
-    };
+    if (userModel.id == null || userModel.id!.isEmpty) {
+      throw ArgumentError('Cannot create doctor without a created user id');
+    }
 
     final payload = {
-      "user": userPayload,
+      "user": {"id": userModel.id},
       "specialty": specialty,
       "degrees": degrees,
       "bio": bio,
@@ -211,10 +213,14 @@ class DoctorRetroDisplayGetProvider with ChangeNotifier {
       "is_international": isInternationalBool,
       "country": country,
       "address": address,
-      "price": price,
+      "advertise": false,
+      "advertise_price": null,
+      "advertise_duration": null,
+      "price": price?.toStringAsFixed(2),
       "voice_call": voiceCall ?? false,   // ✅ جديد
       "video_call": videoCall ?? false,   // ✅ جديد
     };
+    payload.removeWhere((_, value) => value == null);
 
     print(">>> [createDoctor] Payload: $payload");
 
@@ -835,4 +841,3 @@ class DoctorRetroDisplayGetProvider with ChangeNotifier {
 
 
 }
-

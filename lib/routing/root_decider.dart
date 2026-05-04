@@ -1,28 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:racheeta/theme/app_theme.dart';
 import '../di/dependency_ingection.dart';
-import '../features/beauty_centers/providers/beauty_centers_provider.dart';
 import '../features/beauty_centers/screens/beauty_dashboard_screen.dart';
 import '../features/common_screens/signup_login/screens/welcome_page.dart';
-import '../features/doctors/providers/doctors_provider.dart';
 import '../features/doctors/screens/doctors_dashboard_screen.dart';
-import '../features/hospitals/providers/hospital_display_provider.dart';
 import '../features/hospitals/screens/hospital_dashboard_screen.dart';
-import '../features/jobseeker/screens/job_seeker_side/final/browse_jobs.dart';
-import '../features/labrotary/providers/labs_provider.dart';
 import '../features/labrotary/screens/labrotary_dashboard_screen.dart';
-import '../features/medical_centre/providers/medical_centers_providers.dart';
 import '../features/medical_centre/screens/medical_centre_dashboard_screen.dart';
-import '../features/nurse/providers/nurse_provider.dart';
 import '../features/nurse/screens/nurse_dashboard_screen.dart';
-import '../features/pharmacist/providers/pharma_provider.dart';
 import '../features/pharmacist/screens/pharmacy_dashboard_screen.dart';
 import '../features/screens/home_screen.dart';
 import '../features/splash_screen/splash_screen.dart';
-import '../features/therapist/providers/therapist_provider.dart';
 import '../features/therapist/screens/therapist_dashboard_screen.dart';
-import '../main.dart';
-import 'dashboard_router.dart';
 
 class RootDecider extends StatefulWidget {
   const RootDecider({super.key});
@@ -33,161 +23,124 @@ class RootDecider extends StatefulWidget {
 
 class _RootDeciderState extends State<RootDecider> {
   bool _isLoading = true;
-  bool _isRegistered = false;
-  String _role = 'patient';
-  String? _accessToken;
+  String? _role;
   String? _userId;
   String? _userName;
-  String? _doctorId;
-  String? _medicalCenterId;
 
   @override
   void initState() {
     super.initState();
-    _checkRegistration();
+    _bootstrap();
   }
 
-  Future<void> _checkRegistration() async {
+  Future<void> _bootstrap() async {
     final prefs = await SharedPreferences.getInstance();
+    
+    // Ensure DI is ready with current token
+    await setup();
 
-    // ⏳ Wait for up to 1s to ensure prefs are ready
-    for (int i = 0; i < 10; i++) {
-      final role = prefs.getString('role');
-      final userId = prefs.getString('user_id');
-      if (role != null && userId != null) break;
-      debugPrint("⏳ [ROOT DECIDER] Waiting for prefs...");
-      await Future.delayed(const Duration(milliseconds: 100));
+    final token = prefs.getString('access_token') ?? prefs.getString('Login_access_token');
+    final userId = prefs.getString('user_id');
+    final role = prefs.getString('role');
+    final name = prefs.getString('full_name');
+
+    if (mounted) {
+      setState(() {
+        _userId = userId;
+        _role = role;
+        _userName = name;
+        _isLoading = false;
+      });
     }
 
-    final accessToken       = prefs.getString('Login_access_token');
-    final userId            = prefs.getString('user_id');
-    final fullName          = prefs.getString('full_name');
-    final storedRole        = prefs.getString('role');
-    final doctorId          = prefs.getString('doctor_id');
-    final medicalCenterId   = prefs.getString('medical_center_id');
-
-    final isRegistered = (prefs.getBool('isRegistered') ?? false) &&
-        (accessToken?.isNotEmpty ?? false) &&
-        (userId?.isNotEmpty ?? false);
-
-    // 🧠 Debug logs
-    debugPrint("📦 [ROOT DECIDER] role            = $storedRole");
-    debugPrint("📦 [ROOT DECIDER] user_id         = $userId");
-    debugPrint("📦 [ROOT DECIDER] full_name       = $fullName");
-    debugPrint("📦 [ROOT DECIDER] doctor_id       = $doctorId");
-    debugPrint("📦 [ROOT DECIDER] medical_center_id = $medicalCenterId");
-
-    setState(() {
-      _accessToken      = accessToken;
-      _userId           = userId;
-      _userName         = fullName;
-      _role             = storedRole ?? '';
-      _doctorId         = doctorId ?? '';
-      _medicalCenterId  = medicalCenterId ?? '';
-      _isRegistered     = isRegistered;
-      _isLoading        = false;
-    });
-
-    // 🔐 Apply token to all relevant providers
-    final token = accessToken ?? '';
-    if (token.isNotEmpty) {
-      locator<DoctorRetroDisplayGetProvider>().updateToken(token);
-      locator<NurseRetroDisplayGetProvider>().updateToken(token);
-      locator<HospitalRetroDisplayGetProvider>().updateToken(token);
-      locator<PharmaRetroDisplayGetProvider>().updateToken(token);
-      locator<TherapistRetroDisplayGetProvider>().updateToken(token);
-      locator<LabsRetroDisplayGetProvider>().updateToken(token);
-      locator<BeautyCentersRetroDisplayGetProvider>().updateToken(token);
-      locator<MedicalCentersRetroDisplayGetProvider>().updateToken(token);
+    if (token == null || userId == null || isTokenExpired(token)) {
+      if (mounted) {
+        setState(() {
+          _userId = null;
+          _role = null;
+        });
+      }
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    if (_isLoading) {
-      return const SplashScreen();
+    if (_isLoading) return const SplashScreen();
+
+    if (_userId == null || _role == null) {
+      return const WelcomeScreen();
     }
 
-    if (!_isRegistered || (_accessToken?.isEmpty ?? true) || _userId == null) {
-      return  WelcomeScreen();
-    }
     final userId = _userId!;
-    final userName = _userName ?? 'User';
+    final userName = _userName ?? 'مستخدم';
+    final roleLower = _role!.toLowerCase();
+    final prefs = locator<SharedPreferences>();
 
-    switch (_role.toLowerCase()) {
+    switch (roleLower) {
       case 'doctor':
-
         return ResponsiveDoctorDashboard(
-          userType: _role,
+          userType: _role!,
           userId: userId,
           userName: userName,
-          doctorId: _doctorId ?? '',
+          doctorId: prefs.getString('doctor_id') ?? '',
         );
       case 'nurse':
         return ResponsiveNurseDashboard(
-          userType: _role,
+          userType: _role!,
           userId: userId,
           userName: userName,
-          nurseId: '',
+          nurseId: prefs.getString('nurse_id') ?? '',
         );
       case 'pharmacist':
         return ResponsivePharmacyDashboard(
-          userType: _role,
+          userType: _role!,
           userId: userId,
           userName: userName,
-          pharmaId: '',
+          pharmaId: prefs.getString('pharma_id') ?? '',
         );
       case 'therapist':
+      case 'physical-therapist':
         return ResponsiveTherapistDashboard(
-          userType: _role,
+          userType: _role!,
           userId: userId,
           userName: userName,
-          therapistId: '',
+          therapistId: prefs.getString('therapist_id') ?? '',
         );
       case 'lab':
       case 'laboratory':
+      case 'labrotary':
         return ResponsiveLabrotaryDashboard(
-          userType: _role,
+          userType: _role!,
           userId: userId,
           userName: userName,
-          labrotaryId: '',
+          labrotaryId: prefs.getString('labrotary_id') ?? '',
         );
       case 'hospital':
         return ResponsiveHospitalDashboard(
-          userType: _role,
+          userType: _role!,
           userId: userId,
           userName: userName,
-          hospitalId: '',
+          hospitalId: prefs.getString('hospital_id') ?? '',
         );
       case 'beauty_center':
         return ResponsiveBeautyDashboard(
-          userType: 'beauty_center',
+          userType: _role!,
           userId: userId,
-          beautyId: '',
           userName: userName,
+          beautyId: prefs.getString('beautycenter_id') ?? '',
         );
       case 'medical_center':
-      case 'medical_center':
-      case 'mdeidcal_center': {
-        final centerId = (_medicalCenterId?.isNotEmpty ?? false)
-            ? _medicalCenterId!
-            : userId;            // fallback
-
-        debugPrint('➡️  To Dash: userId=$userId  centerId=$centerId');
-
+      case 'medical_centre':
+      case 'mdeidcal_center':
         return ResponsiveMDCenterDashboard(
-          userType   : _role,
-          userId     : userId,
-          centerId   : centerId,
-          centerName : userName,
+          userType: _role!,
+          userId: userId,
+          centerId: prefs.getString('medical_center_id') ?? userId,
+          centerName: userName,
         );
-      }
-
       case 'patient':
-        return  HomeScreen();
       default:
-        return  BrowseJobOffersScreen();
+        return const HomeScreen();
     }
   }
 }
-// Saved jobseeker_id:

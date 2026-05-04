@@ -1,7 +1,9 @@
-// lib/features/notifications/screens/notification_list_page.dart
+import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
+import 'package:racheeta/theme/app_theme.dart';
+import 'package:racheeta/widgets/racheeta_ui/racheeta_ui.dart';
 
 import '../providers/notifications_provider.dart';
 import '../model/notification_model.dart';
@@ -9,7 +11,7 @@ import 'notification_detail_screen.dart';
 
 class NotificationListPage extends StatefulWidget {
   final String userId;
-  const NotificationListPage({Key? key, required this.userId}) : super(key: key);
+  const NotificationListPage({super.key, required this.userId});
 
   @override
   State<NotificationListPage> createState() => _NotificationListPageState();
@@ -21,9 +23,6 @@ class _NotificationListPageState extends State<NotificationListPage>
   List<NoticationsModel> _notes = [];
   late TabController _tabController;
 
-  // track unread count to show “new notifications” banner
-  int _lastUnreadCount = 0;
-
   @override
   void initState() {
     super.initState();
@@ -33,46 +32,27 @@ class _NotificationListPageState extends State<NotificationListPage>
 
   Future<void> _load() async {
     final prov = context.read<NotificationsRetroDisplayGetProvider>();
-    final notes = await prov.fetchLatest15(widget.userId);
-    setState(() {
-      _notes = notes;
-      _loading = false;
-      _lastUnreadCount = notes.where((n) => !n.isRead).length;
-    });
+    try {
+      final notes = await prov.fetchLatest15(widget.userId);
+      if (mounted) {
+        setState(() {
+          _notes = notes;
+          _loading = false;
+        });
+      }
+    } catch (_) {
+      if (mounted) setState(() => _loading = false);
+    }
   }
 
-  // Refresh & show banner if unread increased
   Future<void> _refresh() async {
     final prov = context.read<NotificationsRetroDisplayGetProvider>();
     final notes = await prov.fetchLatest15(widget.userId);
-    final currentUnread = notes.where((n) => !n.isRead).length;
-
-    if (currentUnread > _lastUnreadCount && mounted) {
-      final messenger = ScaffoldMessenger.of(context);
-      messenger.hideCurrentSnackBar();
-      messenger.showSnackBar(
-        SnackBar(
-          content: const Text(
-            'لديك إشعارات جديدة',
-            style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w700),
-          ),
-          backgroundColor: Colors.blueAccent,
-          behavior: SnackBarBehavior.floating,
-          margin: EdgeInsets.only(
-            left: 12,
-            right: 12,
-            top: (kToolbarHeight + MediaQuery.of(context).padding.top) + 10,
-            bottom: 0,
-          ),
-          duration: const Duration(seconds: 3),
-        ),
-      );
+    if (mounted) {
+      setState(() {
+        _notes = notes;
+      });
     }
-
-    setState(() {
-      _notes = notes;
-      _lastUnreadCount = currentUnread;
-    });
   }
 
   List<NoticationsModel> filtered(NotificationType type) {
@@ -82,14 +62,13 @@ class _NotificationListPageState extends State<NotificationListPage>
   IconData _iconForType(NotificationType t) {
     switch (t) {
       case NotificationType.offer:
-        return Icons.local_offer;
+        return Icons.local_offer_outlined;
       case NotificationType.request:
-        return Icons.person_add_alt;
+        return Icons.person_add_outlined;
       case NotificationType.reservation:
-        return Icons.event;
-      case NotificationType.other:
+        return Icons.event_available_outlined;
       default:
-        return Icons.notifications;
+        return Icons.notifications_none_outlined;
     }
   }
 
@@ -98,105 +77,97 @@ class _NotificationListPageState extends State<NotificationListPage>
       case NotificationType.offer:
         return Colors.purple;
       case NotificationType.request:
-        return Colors.orange;
+        return RacheetaColors.warning;
       case NotificationType.reservation:
-        return Colors.teal;
-      case NotificationType.other:
+        return RacheetaColors.primary;
       default:
-        return Colors.blueGrey;
+        return RacheetaColors.textSecondary;
     }
   }
 
   Widget buildList(List<NoticationsModel> list) {
     if (list.isEmpty) {
-      return const Center(child: Text('لا توجد إشعارات'));
+      return const RacheetaEmptyState(
+        icon: Icons.notifications_off_outlined,
+        title: "لا توجد إشعارات",
+        subtitle: "عند وصول تنبيهات جديدة ستظهر هنا.",
+      );
     }
     final prov = context.read<NotificationsRetroDisplayGetProvider>();
+    
     return RefreshIndicator(
       onRefresh: _refresh,
-      child: ListView.separated(
-        padding: const EdgeInsets.only(top: 8, bottom: 12),
+      color: RacheetaColors.primary,
+      child: ListView.builder(
+        padding: const EdgeInsets.symmetric(vertical: 12),
         itemCount: list.length,
-        separatorBuilder: (_, __) => const Divider(height: 1),
         itemBuilder: (_, i) {
           final n = list[i];
-          final leadingIcon = _iconForType(n.type);
-          final leadingColor = _colorForType(n.type);
+          final color = _colorForType(n.type);
+          final icon = _iconForType(n.type);
 
-          return Dismissible(
-            key: ValueKey(n.id),
-            direction: DismissDirection.startToEnd, // swipe RIGHT to mark read
-            background: Container(
-              color: Colors.green.withOpacity(0.15),
-              alignment: Alignment.centerLeft,
-              padding: const EdgeInsets.only(left: 20),
-              child: const Row(
-                children: [
-                  Icon(Icons.done_all, color: Colors.green),
-                  SizedBox(width: 8),
-                  Text('تعليم كمقروء', style: TextStyle(color: Colors.green)),
-                ],
-              ),
-            ),
-            onDismissed: (_) async {
-              await prov.markAsRead(n.id);
-              setState(() {
-                _notes = _notes.map((x) => x.id == n.id ? x.markRead() : x).toList();
-              });
+          return RacheetaCard(
+            margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+            padding: const EdgeInsets.all(16),
+            onTap: () {
+              if (!n.isRead) prov.markAsRead(n.id);
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => NotificationDetailScreen(notification: n)),
+              );
             },
-            child: ListTile(
-              leading: CircleAvatar(
-                backgroundColor: leadingColor.withOpacity(0.15),
-                child: Icon(leadingIcon, color: leadingColor),
-              ),
-              title: Text(
-                n.notificationText,
-                style: TextStyle(
-                  fontWeight: n.isRead ? FontWeight.normal : FontWeight.w600,
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Stack(
+                  children: [
+                    Container(
+                      width: 48,
+                      height: 48,
+                      decoration: BoxDecoration(
+                        color: color.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Icon(icon, color: color, size: 24),
+                    ),
+                    if (!n.isRead)
+                      Positioned(
+                        top: 0,
+                        right: 0,
+                        child: Container(
+                          width: 12,
+                          height: 12,
+                          decoration: BoxDecoration(
+                            color: RacheetaColors.danger,
+                            shape: BoxShape.circle,
+                            border: Border.all(color: Colors.white, width: 2),
+                          ),
+                        ),
+                      ),
+                  ],
                 ),
-              ),
-              subtitle: Text(DateFormat('dd-MM-yyyy • hh:mm a').format(n.createDate)),
-              trailing: n.isRead
-                  ? IconButton(
-                icon: const Icon(Icons.mark_email_unread),
-                tooltip: 'عدم التعليم كمقروء',
-                onPressed: () async {
-                  await prov.markAsUnread(n.id);
-                  setState(() {
-                    _notes = _notes.map((x) => x.id == n.id ? x.markUnread() : x).toList();
-                  });
-                },
-              )
-                  : IconButton(
-                icon: const Icon(Icons.mark_email_read),
-                tooltip: 'تعليم كمقروء',
-                onPressed: () async {
-                  await prov.markAsRead(n.id);
-                  setState(() {
-                    _notes = _notes.map((x) => x.id == n.id ? x.markRead() : x).toList();
-                  });
-                },
-              ),
-              onLongPress: () async {
-                // quick toggle on long press
-                if (n.isRead) {
-                  await prov.markAsUnread(n.id);
-                  setState(() {
-                    _notes = _notes.map((x) => x.id == n.id ? x.markUnread() : x).toList();
-                  });
-                } else {
-                  await prov.markAsRead(n.id);
-                  setState(() {
-                    _notes = _notes.map((x) => x.id == n.id ? x.markRead() : x).toList();
-                  });
-                }
-              },
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (_) => NotificationDetailScreen(notification: n)),
-                );
-              },
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        n.notificationText,
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: n.isRead ? FontWeight.normal : FontWeight.w800,
+                          color: RacheetaColors.textPrimary,
+                        ),
+                      ),
+                      const SizedBox(height: 6),
+                      Text(
+                        DateFormat('dd-MM-yyyy • hh:mm a').format(n.createDate),
+                        style: const TextStyle(fontSize: 11, color: RacheetaColors.textSecondary),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
             ),
           );
         },
@@ -211,30 +182,39 @@ class _NotificationListPageState extends State<NotificationListPage>
   }
 
   @override
-  Widget build(BuildContext ctx) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('الإشعارات'),
-        bottom: TabBar(
-          controller: _tabController,
-          tabs: const [
-            Tab(text: 'العروض'),
-            Tab(text: 'الطلبات'),
-            Tab(text: 'الحجوزات'),
-            Tab(text: 'أخرى'),
-          ],
+  Widget build(BuildContext context) {
+    return Directionality(
+      textDirection: ui.TextDirection.rtl,
+      child: Scaffold(
+        backgroundColor: RacheetaColors.surface,
+        appBar: AppBar(
+          title: const Text('الإشعارات'),
+          bottom: TabBar(
+            controller: _tabController,
+            isScrollable: true,
+            indicatorColor: RacheetaColors.primary,
+            labelColor: RacheetaColors.primary,
+            labelStyle: const TextStyle(fontWeight: FontWeight.w900),
+            unselectedLabelColor: RacheetaColors.textSecondary,
+            tabs: const [
+              Tab(text: 'العروض'),
+              Tab(text: 'الطلبات'),
+              Tab(text: 'الحجوزات'),
+              Tab(text: 'أخرى'),
+            ],
+          ),
         ),
-      ),
-      body: _loading
-          ? const Center(child: CircularProgressIndicator())
-          : TabBarView(
-        controller: _tabController,
-        children: [
-          buildList(filtered(NotificationType.offer)),
-          buildList(filtered(NotificationType.request)),
-          buildList(filtered(NotificationType.reservation)),
-          buildList(filtered(NotificationType.other)),
-        ],
+        body: _loading
+            ? const Center(child: CircularProgressIndicator(color: RacheetaColors.primary))
+            : TabBarView(
+                controller: _tabController,
+                children: [
+                  buildList(filtered(NotificationType.offer)),
+                  buildList(filtered(NotificationType.request)),
+                  buildList(filtered(NotificationType.reservation)),
+                  buildList(filtered(NotificationType.other)),
+                ],
+              ),
       ),
     );
   }

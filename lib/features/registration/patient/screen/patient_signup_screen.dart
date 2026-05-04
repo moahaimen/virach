@@ -1,4 +1,3 @@
-import 'package:dio/dio.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/gestures.dart';
@@ -9,8 +8,10 @@ import 'patient_login.dart';
 import 'patient_registration_profile_form.dart';
 
 class OldPatientsSignupScreen extends StatefulWidget {
+  const OldPatientsSignupScreen({super.key});
+
   @override
-  _OldPatientsSignupScreenState createState() => _OldPatientsSignupScreenState();
+  State<OldPatientsSignupScreen> createState() => _OldPatientsSignupScreenState();
 }
 
 class _OldPatientsSignupScreenState extends State<OldPatientsSignupScreen> {
@@ -81,7 +82,7 @@ class _OldPatientsSignupScreenState extends State<OldPatientsSignupScreen> {
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => const PatientRegistrationProfileFormPage(userCredentials: {}),
+        builder: (context) => const PatientRegistrationProfileFormPage(),
       ),
     );
   }

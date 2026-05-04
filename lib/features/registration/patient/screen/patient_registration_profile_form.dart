@@ -500,10 +500,14 @@ class _PatientRegistrationProfileFormPageState
     } catch (e) {
       Navigator.of(context).pop(); // close loader
       debugPrint("❌ Error saving profile: $e");
+      final message = e.toString().contains('500') ||
+              e.toString().toLowerCase().contains('server')
+          ? "تعذر إنشاء الحساب بسبب خطأ في خادم التسجيل. المشكلة ليست من بياناتك."
+          : "فشل إنشاء الحساب. تأكد من صحة البيانات.";
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
+        SnackBar(
           content: Text(
-            "فشل إنشاء الحساب. تأكد من صحة البيانات.",
+            message,
             textAlign: TextAlign.center,
           ),
           backgroundColor: Colors.red,
@@ -663,16 +667,23 @@ class _PatientRegistrationProfileFormPageState
                   ),
                 ),
                 const SizedBox(height: 10),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
+                Wrap(
+                  alignment: WrapAlignment.center,
+                  spacing: 10,
+                  runSpacing: 10,
                   children: [
                     ElevatedButton(
                       onPressed: _takePhoto,
+                      style: ElevatedButton.styleFrom(
+                        minimumSize: const Size(120, 44),
+                      ),
                       child: const Text("التقط صورة"),
                     ),
-                    const SizedBox(width: 10),
                     ElevatedButton(
                       onPressed: _pickImage,
+                      style: ElevatedButton.styleFrom(
+                        minimumSize: const Size(150, 44),
+                      ),
                       child: const Text("اختر صورة من المعرض"),
                     ),
                   ],

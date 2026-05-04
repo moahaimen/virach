@@ -1,11 +1,9 @@
 import 'dart:convert';
 import 'package:get_it/get_it.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:dio/dio.dart';
 import '../features/applicants/providers/applicants_provider.dart';
 import '../features/beauty_centers/providers/beauty_centers_provider.dart';
 import '../features/chatting/providers/chatting_provider.dart';
-import '../features/common_screens/signup_login/models/login_model.dart';
 import '../features/doctors/providers/doctors_provider.dart';
 import '../features/hospitals/providers/hospital_display_provider.dart';
 import '../features/jobposting/provider/jobposting_provider.dart';
@@ -19,7 +17,6 @@ import '../features/pharmacist/providers/pharma_provider.dart';
 import '../features/registration/patient/provider/patient_registration_provider.dart';
 import '../features/reservations/providers/reservations_provider.dart';
 import '../features/therapist/providers/therapist_provider.dart';
-import '../core/services/api_client.dart';
 
 final GetIt locator = GetIt.instance;
 
@@ -29,12 +26,11 @@ bool isTokenExpired(String token) {
     final parts = token.split('.');
     if (parts.length != 3) return true; // Invalid token
 
-    final payload = json.decode(utf8.decode(base64Url.decode(parts[1])));
+    final payload = json.decode(utf8.decode(base64Url.decode(base64Url.normalize(parts[1]))));
     final exp = payload["exp"]; // Expiration timestamp
 
     return DateTime.now().millisecondsSinceEpoch > (exp * 1000);
   } catch (e) {
-    print("⚠️ Error decoding token: $e");
     return true; // Treat as expired if decoding fails
   }
 }
@@ -42,82 +38,51 @@ bool isTokenExpired(String token) {
 /// ✅ Clears the stored JWT token to force re-login.
 Future<void> clearStoredToken() async {
   final prefs = await SharedPreferences.getInstance();
-  await prefs.remove("Login_access_token");
   await prefs.remove("access_token");
+  await prefs.remove("Login_access_token");
   await prefs.remove("refresh_token");
 }
 
 /// ✅ Ensures providers are registered only once.
 Future<void> setup() async {
   final prefs = await SharedPreferences.getInstance();
-  String jwtToken = prefs.getString("Login_access_token") ?? '';
+  
+  // Unify token storage: prefer 'access_token', fallback to 'Login_access_token'
+  String jwtToken = prefs.getString("access_token") ?? prefs.getString("Login_access_token") ?? '';
 
   // Check token expiration
   if (jwtToken.isNotEmpty && isTokenExpired(jwtToken)) {
-    await prefs.remove("Login_access_token");
+    await clearStoredToken();
     jwtToken = '';
   }
-  locator.registerLazySingleton<SharedPreferences>(() => prefs);
-
-  if (jwtToken.isEmpty) {
-    // No valid token available. RootDecider will navigate to Welcome/Login.
+  
+  if (!locator.isRegistered<SharedPreferences>()) {
+    locator.registerLazySingleton<SharedPreferences>(() => prefs);
   }
 
-
-  // **💡 Unregister existing providers before registering them again**
-  if (locator.isRegistered<DoctorRetroDisplayGetProvider>()) {
-    locator.unregister<DoctorRetroDisplayGetProvider>();
-    print("♻️ [Setup] DoctorRetroDisplayGetProvider unregistered.");
-  }
-
-  locator.registerLazySingleton(() => DoctorRetroDisplayGetProvider(jwtToken));
-  print("✅ [Setup] DoctorRetroDisplayGetProvider registered successfully.");
-
-  // ✅ Unregister & Register other providers safely
+  // ✅ Register providers with current token (or empty string)
+  _registerProvider<DoctorRetroDisplayGetProvider>(() => DoctorRetroDisplayGetProvider(jwtToken));
   _registerProvider<ApplicantsProvider>(() => ApplicantsProvider(jwtToken));
-  // _registerProvider<ApplicantsProvider>(() => ThemeProvider());
-  _registerProvider<JobSeekerRetroDisplayGetProvider>(
-      () => JobSeekerRetroDisplayGetProvider(jwtToken));
-
-  _registerProvider<PharmaRetroDisplayGetProvider>(
-      () => PharmaRetroDisplayGetProvider(jwtToken));
-  _registerProvider<PatientRetroDisplayGetProvider>(
-      () => PatientRetroDisplayGetProvider(jwtToken));
-
-  _registerProvider<HospitalRetroDisplayGetProvider>(
-      () => HospitalRetroDisplayGetProvider(jwtToken));
-  _registerProvider<MedicalCentersRetroDisplayGetProvider>(
-      () => MedicalCentersRetroDisplayGetProvider(jwtToken));
-  _registerProvider<LabsRetroDisplayGetProvider>(
-      () => LabsRetroDisplayGetProvider(jwtToken));
-  _registerProvider<BeautyCentersRetroDisplayGetProvider>(
-      () => BeautyCentersRetroDisplayGetProvider(jwtToken));
-  _registerProvider<OffersRetroDisplayGetProvider>(
-      () => OffersRetroDisplayGetProvider(jwtToken));
-  _registerProvider<TherapistRetroDisplayGetProvider>(
-      () => TherapistRetroDisplayGetProvider(jwtToken));
-  _registerProvider<ChattingRetroDisplayGetProvider>(
-      () => ChattingRetroDisplayGetProvider(jwtToken));
-  _registerProvider<NotificationsRetroDisplayGetProvider>(
-      () => NotificationsRetroDisplayGetProvider(jwtToken));
-  _registerProvider<NurseRetroDisplayGetProvider>(
-      () => NurseRetroDisplayGetProvider(jwtToken));
-  _registerProvider<JobPostingRetroDisplayGetProvider>(
-      () => JobPostingRetroDisplayGetProvider(jwtToken));
-  _registerProvider<ReservationRetroDisplayGetProvider>(
-      () => ReservationRetroDisplayGetProvider(jwtToken));
-
-  print("✅ [Setup] All Providers Successfully Registered.");
+  _registerProvider<JobSeekerRetroDisplayGetProvider>(() => JobSeekerRetroDisplayGetProvider(jwtToken));
+  _registerProvider<PharmaRetroDisplayGetProvider>(() => PharmaRetroDisplayGetProvider(jwtToken));
+  _registerProvider<PatientRetroDisplayGetProvider>(() => PatientRetroDisplayGetProvider(jwtToken));
+  _registerProvider<HospitalRetroDisplayGetProvider>(() => HospitalRetroDisplayGetProvider(jwtToken));
+  _registerProvider<MedicalCentersRetroDisplayGetProvider>(() => MedicalCentersRetroDisplayGetProvider(jwtToken));
+  _registerProvider<LabsRetroDisplayGetProvider>(() => LabsRetroDisplayGetProvider(jwtToken));
+  _registerProvider<BeautyCentersRetroDisplayGetProvider>(() => BeautyCentersRetroDisplayGetProvider(jwtToken));
+  _registerProvider<OffersRetroDisplayGetProvider>(() => OffersRetroDisplayGetProvider(jwtToken));
+  _registerProvider<TherapistRetroDisplayGetProvider>(() => TherapistRetroDisplayGetProvider(jwtToken));
+  _registerProvider<ChattingRetroDisplayGetProvider>(() => ChattingRetroDisplayGetProvider(jwtToken));
+  _registerProvider<NotificationsRetroDisplayGetProvider>(() => NotificationsRetroDisplayGetProvider(jwtToken));
+  _registerProvider<NurseRetroDisplayGetProvider>(() => NurseRetroDisplayGetProvider(jwtToken));
+  _registerProvider<JobPostingRetroDisplayGetProvider>(() => JobPostingRetroDisplayGetProvider(jwtToken));
+  _registerProvider<ReservationRetroDisplayGetProvider>(() => ReservationRetroDisplayGetProvider(jwtToken));
 }
 
 /// **Helper function to safely register a provider**
 void _registerProvider<T extends Object>(T Function() provider) {
   if (locator.isRegistered<T>()) {
     locator.unregister<T>();
-    print("♻️ [Setup] Unregistered provider: $T");
   }
   locator.registerLazySingleton(provider);
-  print("✅ [Setup] Registered provider: $T");
 }
-
-

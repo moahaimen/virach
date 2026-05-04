@@ -9,21 +9,29 @@ import '../services/api_client.dart';
 import '../../doctors/models/doctor_request_model.dart';
 
 class MedicalCentersRetroDisplayGetProvider with ChangeNotifier {
-  final MedicalCentersApiClient _api;
+  late final MedicalCentersApiClient _api;
   final Dio _dio;
 
   MedicalCentersRetroDisplayGetProvider(String token)
-      : _dio = Dio()..options.headers['Authorization'] = 'JWT $token',
-        _api = MedicalCentersApiClient(
-          Dio()..options.headers['Authorization'] = 'JWT $token',
-        );
+      : _dio = Dio() {
+    _setAuthToken(token);
+    _api = MedicalCentersApiClient(_dio);
+  }
 
   /// Update both stored token & header
   Future<void> updateToken(String token) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString('access_token', token);
-    _dio.options.headers['Authorization'] = 'JWT $token';
+    _setAuthToken(token);
     notifyListeners();
+  }
+
+  void _setAuthToken(String token) {
+    if (token.isEmpty) {
+      _dio.options.headers.remove('Authorization');
+    } else {
+      _dio.options.headers['Authorization'] = 'JWT $token';
+    }
   }
 
   /// Own `/me/` data
@@ -62,8 +70,12 @@ class MedicalCentersRetroDisplayGetProvider with ChangeNotifier {
     String? advertiseDuration,
     String? profileImage,
   }) async {
+    final userId = user['id']?.toString();
+    if (userId == null || userId.isEmpty) {
+      throw ArgumentError('Cannot create medical center without a created user id');
+    }
     final payload = {
-      'user': user,
+      'user': {'id': userId},
       'center_name': centerName,
       'director_name': directorName,
       'bio': bio,

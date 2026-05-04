@@ -35,27 +35,16 @@ class BeautyCentersRetroDisplayGetProvider with ChangeNotifier {
   }) async {
     print(">>> [DEBUG] Starting createBeautyCenters...");
     try {
-      // Prepare the user payload
-      final Map<String, dynamic> userPayload = {
-        "id": userModel.id,
-        "email": userModel.email,
-        "full_name": userModel.fullName,
-        "role": userModel.role,
-        "profile_image": userModel.profileImage,
-        "gps_location": userModel.gpsLocation,
-        "phone_number": userModel.phoneNumber,
-        "is_active": userModel.isActive ?? true,
-        "is_staff": userModel.isStaff ?? false,
-        "gender": userModel.gender,
-        "firebase_uid": userModel.firebaseUid,
-      };
+      if (userModel.id == null || userModel.id!.isEmpty) {
+        throw ArgumentError('Cannot create beauty center without a created user id');
+      }
 
       print(">>> [DEBUG] User payload prepared:");
-      print(userPayload);
+      print({"id": userModel.id});
 
       // Prepare the beauty center payload
       final Map<String, dynamic> beautyCenterData = {
-        "user": userPayload,
+        "user": {"id": userModel.id},
         "center_name": centerName,
         "bio": bio,
         "availability_time": availabilityTime,

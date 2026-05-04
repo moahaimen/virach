@@ -1,10 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:racheeta/models/offer_model.dart';
 import 'package:racheeta/features/offers/screens/offer_details_screen.dart';
+import 'package:racheeta/theme/app_theme.dart';
+import 'package:racheeta/widgets/racheeta_ui/racheeta_ui.dart';
 
-import '../../constansts/constants.dart';
-
-/// Choose between network and asset images.
 ImageProvider _imgProvider(String path) =>
     (path.startsWith('http') || path.startsWith('https'))
         ? NetworkImage(path)
@@ -12,140 +11,155 @@ ImageProvider _imgProvider(String path) =>
 
 class OfferListItem extends StatelessWidget {
   const OfferListItem({
-    Key? key,
+    super.key,
     required this.offer,
-    required this.textStyle,
     this.onTap,
-  }) : super(key: key);
+  });
 
-  final Offer        offer;
-  final TextStyle    textStyle;
-  final VoidCallback? onTap;   // optional external handler
+  final Offer offer;
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
-    final h = MediaQuery.of(context).size.height;
-
     void _navigate() => Navigator.push(
-      context,
-      MaterialPageRoute(builder: (_) => OfferDetailsScreen(offer: offer)),
-    );
+          context,
+          MaterialPageRoute(builder: (_) => OfferDetailsScreen(offer: offer)),
+        );
 
-    return GestureDetector(
+    return RacheetaCard(
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      padding: EdgeInsets.zero,
       onTap: onTap ?? _navigate,
-      child: Padding(
-        padding: const EdgeInsets.all(8),
-        child: Card(
-          elevation: 4,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Image + Discount Badge
+          Stack(
             children: [
-
-              // ---------- IMAGE + DISCOUNT BADGE ----------
-              Stack(
-                children: [
-                  ClipRRect(
-                    borderRadius: const BorderRadius.only(
-                      topLeft:  Radius.circular(10),
-                      topRight: Radius.circular(10),
-                    ),
-                    child: Image(
-                      image: _imgProvider(offer.image),
-                      height: h * 0.20,
-                      width : double.infinity,
-                      fit   : BoxFit.cover,
-                    ),
+              ClipRRect(
+                borderRadius: const BorderRadius.vertical(top: Radius.circular(22)),
+                child: Image(
+                  image: _imgProvider(offer.image),
+                  height: 180,
+                  width: double.infinity,
+                  fit: BoxFit.cover,
+                  errorBuilder: (_, __, ___) => Container(
+                    height: 180,
+                    color: RacheetaColors.mintLight,
+                    child: const Icon(Icons.image_not_supported_outlined, color: RacheetaColors.primary),
                   ),
-                  if (offer.discount.isNotEmpty)
-                    Positioned(
-                      top : 8,
-                      right: 8,
-                      child: Container(
-                        padding: kDiscountBadgePadding,
-                        decoration: kDiscountBorderPadding,
-                        child: Text(
-                          offer.discount,               // already contains %
-                          style: kOfferDiscountTextStyle,
-                        ),
-                      ),
-                    ),
-                  const Positioned(
-                    bottom: 8,
-                    right : 8,
-                    child : CircleAvatar(
-                      radius: 20,
-                      backgroundImage: AssetImage('assets/offers/doctor.png'),
-                    ),
-                  ),
-                ],
-              ),
-
-              // ---------- DETAILS ----------
-              Padding(
-                padding: const EdgeInsets.all(8),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-
-                    // name
-                    Text(offer.name,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: kOfferNameTextStyle),
-
-                    const SizedBox(height: 4),
-
-                    // provider + location
-                    Text(offer.doctorName, style: kDoctorRatingTextStyle),
-                    if (offer.location.isNotEmpty)
-                      Text(offer.location, style: kDoctorRatingTextStyle),
-
-                    const SizedBox(height: 4),
-
-                    // price
-                    Row(
-                      children: [
-                        Text('${offer.price} دينار',
-                            style: const TextStyle(
-                                fontSize: 14,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.green)),
-                        const SizedBox(width: 8),
-                        if (offer.oldPrice.isNotEmpty)
-                          Text('${offer.oldPrice} دينار',
-                              style: kOfferOldPriceTextStyle),
-                      ],
-                    ),
-
-                    const SizedBox(height: 4),
-
-                    // rating
-                    Row(
-                      children: [
-                        const Icon(Icons.star, color: Colors.amber, size: 16),
-                        const SizedBox(width: 4),
-                        Text('${offer.rating}',
-                            style: const TextStyle(fontSize: 14)),
-                        Text(' (${offer.reviews})',
-                            style: const TextStyle(fontSize: 14, color: Colors.grey)),
-                      ],
-                    ),
-
-                    const SizedBox(height: 8),
-
-                    // reserve button
-                    ElevatedButton(
-                      onPressed: onTap ?? _navigate,
-                      style: kRedRoundedButtonStyle,
-                      child: const Text('احجز', style: kOfferReserveButtonTextStyle),
-                    ),
-                  ],
                 ),
               ),
+              if (offer.discount.isNotEmpty)
+                Positioned(
+                  top: 16,
+                  right: 16,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    decoration: BoxDecoration(
+                      color: RacheetaColors.danger,
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Text(
+                      offer.discount,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 13,
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
+                  ),
+                ),
             ],
           ),
-        ),
+
+          // Details
+          Padding(
+            padding: const EdgeInsets.all(18),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        offer.name,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                              fontWeight: FontWeight.w900,
+                              color: RacheetaColors.textPrimary,
+                            ),
+                      ),
+                      const SizedBox(height: 6),
+                      Row(
+                        children: [
+                          const Icon(Icons.location_on_outlined, size: 14, color: RacheetaColors.textSecondary),
+                          const SizedBox(width: 4),
+                          Expanded(
+                            child: Text(
+                              '${offer.doctorName} • ${offer.location.isNotEmpty ? offer.location : "العراق"}',
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: Theme.of(context).textTheme.bodySmall,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 12),
+                      Row(
+                        children: [
+                          Text(
+                            '${offer.price} د.ع',
+                            style: const TextStyle(
+                              color: RacheetaColors.primary,
+                              fontWeight: FontWeight.w900,
+                              fontSize: 17,
+                            ),
+                          ),
+                          const SizedBox(width: 10),
+                          if (offer.oldPrice.isNotEmpty)
+                            Text(
+                              '${offer.oldPrice} د.ع',
+                              style: const TextStyle(
+                                color: RacheetaColors.textSecondary,
+                                fontSize: 13,
+                                decoration: TextDecoration.lineThrough,
+                              ),
+                            ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Column(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                      decoration: BoxDecoration(
+                        color: Colors.amber.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Row(
+                        children: [
+                          const Icon(Icons.star, color: Colors.amber, size: 16),
+                          const SizedBox(width: 4),
+                          Text(
+                            '${offer.rating}',
+                            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    const Icon(Icons.arrow_back_ios_new, color: RacheetaColors.primary, size: 20),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }

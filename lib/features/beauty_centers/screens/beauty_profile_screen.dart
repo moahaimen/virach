@@ -318,7 +318,9 @@ class _BeautyCenterProfileState extends State<BeautyCenterProfile>
                     genderOptions: _genderOptions,
                     isEditMode: _isEditMode,
                     onGenderChanged: (val) {
-                      if (val != null) setState(() => _selectedGender = val);
+                      if (val != null) {
+                        setState(() => _selectedGender = val);
+                      }
                     },
                   ),
                   CenterInfoTab(
@@ -335,10 +337,10 @@ class _BeautyCenterProfileState extends State<BeautyCenterProfile>
                     defaultLocation: _defaultLocation,
                     isEditMode: _isEditMode,
                     onCityChanged: (val) {
-                      if (val != null) setState(() => _selectedCity = val);
+                      setState(() => _selectedCity = val);
                     },
                     onDistrictChanged: (val) {
-                      if (val != null) setState(() => _selectedDistrict = val);
+                      setState(() => _selectedDistrict = val);
                     },
                     onLocationChanged: (loc) {
                       setState(() => _location = loc);

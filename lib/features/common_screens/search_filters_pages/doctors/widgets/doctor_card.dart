@@ -15,6 +15,25 @@ class DoctorCard extends StatelessWidget {
     required this.onTap,
   });
 
+  Widget _buildAvatar() {
+    final profileImage = doctor.user?.profileImage;
+    if (profileImage != null && profileImage.isNotEmpty) {
+      return Image.network(
+        profileImage,
+        fit: BoxFit.cover,
+        errorBuilder: (_, __, ___) => Image.asset(
+          'assets/icons/doctor_icon.png',
+          fit: BoxFit.cover,
+        ),
+      );
+    }
+
+    return Image.asset(
+      'assets/icons/doctor_icon.png',
+      fit: BoxFit.cover,
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     /*──────────────── قيم التقييم ────────────────*/
@@ -48,12 +67,12 @@ class DoctorCard extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   /* صورة البروفايل */
-                  CircleAvatar(
-                    radius: 40,
-                    backgroundImage: doctor.user?.profileImage != null
-                        ? NetworkImage(doctor.user!.profileImage!)
-                        : const AssetImage('assets/icons/doctor_icon.png')
-                    as ImageProvider,
+                  ClipOval(
+                    child: SizedBox(
+                      width: 80,
+                      height: 80,
+                      child: _buildAvatar(),
+                    ),
                   ),
                   const SizedBox(width: 16),
 
@@ -74,9 +93,9 @@ class DoctorCard extends StatelessWidget {
 // ⭐⭐⭐⭐★ + عدد المراجعات
                         Row(
                           children: [
-                            ...buildStars(doctor.reviewsAvg, size: 18),          // ⭐⭐⭐★☆
+                            ...buildStars(rating, size: 18),          // ⭐⭐⭐★☆
                             const SizedBox(width: 4),
-                            Text('(${doctor.reviewsCount})',
+                            Text('($reviews)',
                                 style: const TextStyle(fontSize: 12, color: Colors.grey)),
                           ],
                         ),
@@ -144,6 +163,8 @@ class DoctorCard extends StatelessWidget {
                     onPressed: onTap,
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.red,
+                      minimumSize: const Size(112, 40),
+                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                       padding:
                       const EdgeInsets.symmetric(horizontal: 32, vertical: 8),
                     ),

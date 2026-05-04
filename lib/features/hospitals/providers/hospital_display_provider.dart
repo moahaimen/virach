@@ -52,22 +52,12 @@ class HospitalRetroDisplayGetProvider with ChangeNotifier {
   }) async {
     print(">>> [createHospital] Starting hospital creation...");
 
-    final Map<String, dynamic> userPayload = {
-      "id": userModel.id,
-      "email": userModel.email,
-      "full_name": userModel.fullName,
-      "role": userModel.role,
-      "profile_image": userModel.profileImage,
-      "gps_location": userModel.gpsLocation,
-      "phone_number": userModel.phoneNumber,
-      "is_active": userModel.isActive ?? true,
-      "is_staff": userModel.isStaff ?? false,
-      "gender": userModel.gender,
-      "firebase_uid": userModel.firebaseUid,
-    };
+    if (userModel.id == null || userModel.id!.isEmpty) {
+      throw ArgumentError('Cannot create hospital without a created user id');
+    }
 
     final Map<String, dynamic> payload = {
-      "user": userPayload,
+      "user": {"id": userModel.id},
       "hospital_name": hospitalName,
       "specialty": specialty,
       "administration": administration,

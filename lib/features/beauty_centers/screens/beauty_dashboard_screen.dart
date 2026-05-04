@@ -1,9 +1,9 @@
-
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:racheeta/theme/app_theme.dart';
+import 'package:racheeta/widgets/racheeta_ui/racheeta_ui.dart';
 
 import '../../../dashboard/base_today_appointments.dart';
 import '../../../services/notification_service.dart';
@@ -16,61 +16,39 @@ import '../../doctors/widgets/notification_widgets/notifications_list.dart';
 import '../../notifications/providers/notifications_provider.dart';
 import '../../notifications/model/notification_model.dart';
 import '../../reservations/providers/reservations_provider.dart';
-import '../../../constansts/constants.dart';
-
 import '../../../widgets/dashboard_widget/drawer_widget.dart';
 
-
-/// A Doctor Dashboard that now accepts userId and userName
 class ResponsiveBeautyDashboard extends StatefulWidget {
-  /// The userType (e.g. "doctor")
   final String userType;
-
-  /// The ID of the current user
   final String userId;
-
-  /// The ID of the current doctor (same as userId or different as needed)
   final String beautyId;
-
-  /// The name of the current user
   final String userName;
 
   const ResponsiveBeautyDashboard({
-    Key? key,
+    super.key,
     required this.userType,
     required this.userId,
     required this.userName,
     required this.beautyId,
-  }) : super(key: key);
+  });
 
   @override
-  _ResponsiveBeautyDashboardState createState() =>
-      _ResponsiveBeautyDashboardState();
+  State<ResponsiveBeautyDashboard> createState() => _ResponsiveBeautyDashboardState();
 }
 
 class _ResponsiveBeautyDashboardState extends State<ResponsiveBeautyDashboard> {
-  final FlutterLocalNotificationsPlugin _localNotificationsPlugin =
-  FlutterLocalNotificationsPlugin();
-
-  // Notifications polling timer (already in your code)
   Timer? _notificationPollingTimer;
-  // <-- Add a reservations refresh timer
   Timer? _reservationRefreshTimer;
 
   List<NoticationsModel> notifications = [];
   bool _isLoading = false;
-  bool _hasInitialLoaded = false;
-  late String beautyId = '';
+  late String _beautyId;
 
   @override
   void initState() {
     super.initState();
-    _initializeNotifications();
-    _loadNotifications(silent: false); // show spinner on first call
-    _startNotificationPolling();
-    _loadBeautyd();
-    // Start the reservations refresh timer (every 3 minutes)
-    _startReservationRefresh();
+    _beautyId = widget.beautyId;
+    _bootstrap();
   }
 
   @override
@@ -80,216 +58,132 @@ class _ResponsiveBeautyDashboardState extends State<ResponsiveBeautyDashboard> {
     super.dispose();
   }
 
-// after you finish reading nurseId:
-  Future<void> _loadBeautyd() async {
+  Future<void> _bootstrap() async {
     final prefs = await SharedPreferences.getInstance();
-    setState(() {
-      beautyId = prefs.getString("beautycenter_id") ?? widget.beautyId;
-    });
-
-    debugPrint("Loaded beauty ID: $beautyId");
-
-    // 👇  NEW: pull reservations immediately
+    _beautyId = prefs.getString("beautycenter_id") ?? widget.beautyId;
+    
     _fetchReservations();
-  }
-
-  // -------------------------------------------
-  // Notifications Code (Unchanged)
-  // -------------------------------------------
-  void _initializeNotifications() {
-    const initializationSettingsAndroid =
-    AndroidInitializationSettings('@mipmap/ic_launcher');
-    const initializationSettingsIOS = DarwinInitializationSettings();
-    const initializationSettings = InitializationSettings(
-      android: initializationSettingsAndroid,
-      iOS: initializationSettingsIOS,
-    );
-    _localNotificationsPlugin.initialize(initializationSettings);
+    _loadNotifications();
+    
+    _notificationPollingTimer = Timer.periodic(const Duration(minutes: 3), (_) => _loadNotifications(silent: true));
+    _reservationRefreshTimer = Timer.periodic(const Duration(minutes: 3), (_) => _fetchReservations());
   }
 
   Future<void> _logout() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.clear();
-    final tokenProvider = Provider.of<TokenProvider>(context, listen: false);
-    tokenProvider.updateToken("");
-    debugPrint("User logged out.");
+    if (!mounted) return;
+    context.read<TokenProvider>().updateToken("");
 
     Navigator.pushReplacement(
       context,
-      MaterialPageRoute(builder: (context) => MedicaWelcomeScreen()),
+      MaterialPageRoute(builder: (context) => const MedicaWelcomeScreen()),
     );
   }
 
   Future<void> _loadNotifications({bool silent = false}) async {
-    if (!silent && !_hasInitialLoaded) {
-      setState(() => _isLoading = true);
-    }
+    if (!silent) setState(() => _isLoading = true);
     try {
-      final provider = Provider.of<NotificationsRetroDisplayGetProvider>(
-        context,
-        listen: false,
-      );
-      final fetchedNotifications = await provider.fetchNotifications(beautyId);
-      setState(() {
-        notifications = fetchedNotifications;
-      });
-    } catch (e) {
-      debugPrint("Error fetching notifications: $e");
+      final provider = Provider.of<NotificationsRetroDisplayGetProvider>(context, listen: false);
+      final fetched = await provider.fetchNotifications(_beautyId);
+      if (mounted) setState(() => notifications = fetched);
+    } catch (_) {
     } finally {
-      if (!silent && !_hasInitialLoaded) {
-        setState(() {
-          _isLoading = false;
-          _hasInitialLoaded = true;
-        });
-      }
+      if (!silent && mounted) setState(() => _isLoading = false);
     }
-  }
-
-  void _startNotificationPolling() {
-    _notificationPollingTimer =
-        Timer.periodic(const Duration(minutes: 1), (timer) {
-          _loadNotifications(silent: true);
-        });
-  }
-
-  // -------------------------------------------
-  // NEW: Reservations Auto-Refresh Timer
-  // -------------------------------------------
-  void _startReservationRefresh() {
-    _reservationRefreshTimer =
-        Timer.periodic(const Duration(minutes: 1), (timer) {
-          _fetchReservations();
-        });
   }
 
   Future<void> _fetchReservations() async {
     try {
-      await Provider.of<ReservationRetroDisplayGetProvider>(context,
-          listen: false)
-          .fetchMyFullReservations(context);
-      debugPrint("Reservations refreshed at ${DateTime.now()}");
-    } catch (e) {
-      debugPrint("Error fetching reservations: $e");
-    }
+      await Provider.of<ReservationRetroDisplayGetProvider>(context, listen: false).fetchMyFullReservations(context);
+    } catch (_) {}
   }
 
   void _markNotificationAsRead(NoticationsModel notification) async {
-    final provider = Provider.of<NotificationsRetroDisplayGetProvider>(
-      context,
-      listen: false,
-    );
+    final provider = Provider.of<NotificationsRetroDisplayGetProvider>(context, listen: false);
     try {
-      notification.isRead = true;
-      await provider.createNotification(
-        user: notification.user!,
-        notificationText: notification.notificationText!,
-        isRead: true,
-        createUser: notification.createUser,
-        updateUser: notification.updateUser,
-      );
+      await provider.markAsRead(notification.id);
       _loadNotifications(silent: true);
-    } catch (e) {
-      debugPrint("Error marking notification as read: $e");
-    }
+    } catch (_) {}
   }
 
   void _showNotificationsDropdown() {
     showModalBottomSheet(
       context: context,
-      builder: (ctx) {
-        return NotificationList(
-          notifications: notifications,
-          onNotificationTap: _markNotificationAsRead,
-        );
-      },
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(22))),
+      builder: (ctx) => NotificationList(
+        notifications: notifications,
+        onNotificationTap: _markNotificationAsRead,
+      ),
     );
   }
 
-  Future<void> _sendTestNotification() async {
-    await NotificationService.instance.showLocal(
-      title: 'اختبار',
-      body: 'هذا إشعار تجريبي من لوحة التحكم',
-      alsoCache: true,
-    );
-  }
-
-  // -------------------------------------------
-  // Build UI
-  // -------------------------------------------
   @override
   Widget build(BuildContext context) {
-    final notifProvider =
-    Provider.of<NotificationsRetroDisplayGetProvider>(context);
-    return SafeArea(
+    final unread = context.watch<NotificationsRetroDisplayGetProvider>().unreadNotificationsCount;
+
+    return Directionality(
+      textDirection: TextDirection.rtl,
       child: Scaffold(
+        backgroundColor: RacheetaColors.surface,
         appBar: AppBar(
-          backgroundColor: Colors.blue,
-          centerTitle: true,
-          title: Text(
-            '${widget.userType} لوحة تحكم ',
-            style: kAppBarDashboardTextStyle,
-          ),
+          title: const Text('لوحة تحكم مركز التجميل'),
           actions: [
             IconButton(
-              icon: NotificationBadge(
-                unreadCount: notifProvider.unreadNotificationsCount,
-              ),
+              icon: NotificationBadge(unreadCount: unread),
               onPressed: _showNotificationsDropdown,
             ),
             IconButton(
-              icon: const Icon(Icons.chat, color: Colors.white),
-              onPressed: () {
-                Navigator.pushNamed(context, '/messages');
-              },
-            ),
-            IconButton(
-              icon: const Icon(Icons.logout, color: Colors.white),
-              onPressed: _logout,
+              icon: const Icon(Icons.chat_bubble_outline),
+              onPressed: () => Navigator.pushNamed(context, '/messages'),
             ),
           ],
         ),
         drawer: DrawerWidget(
           userType: widget.userType,
           userId: widget.userId,
-          hspId: widget.beautyId,
+          hspId: _beautyId,
         ),
-        body: Stack(
-          children: [
-            SingleChildScrollView(
+        body: _isLoading 
+          ? const Center(child: CircularProgressIndicator(color: RacheetaColors.primary))
+          : SingleChildScrollView(
+              padding: const EdgeInsets.symmetric(vertical: 20),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 90.0),
-                    child: Text(
-                      'مرحبا بك , ${widget.userName} ',
-                      style: const TextStyle(fontSize: 16, color: Colors.black),
+                    padding: const EdgeInsets.symmetric(horizontal: 20),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text('أهلاً بك،', style: TextStyle(color: RacheetaColors.textSecondary, fontSize: 14)),
+                        Text(widget.userName, style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w900, color: RacheetaColors.textPrimary)),
+                      ],
                     ),
                   ),
-                  Stastics(),
+                  const SizedBox(height: 24),
+                  const Stastics(),
+                  const SizedBox(height: 16),
                   BaseTodayAppointments(
                     userType: widget.userType,
                     userId: widget.userId,
-                    hspId: widget.beautyId,
+                    hspId: _beautyId,
                     userName: widget.userName,
                   ),
-                  const SizedBox(height: 20),
+                  const SizedBox(height: 24),
+                  const Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                    child: Text('إجراءات سريعة', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w900, color: RacheetaColors.textPrimary)),
+                  ),
                   ActionButtonsWidget(userType: widget.userType),
                 ],
               ),
             ),
-            if (_isLoading)
-              const Center(
-                child: CircularProgressIndicator(),
-              ),
-          ],
-        ),
         floatingActionButton: FloatingActionButton(
-          onPressed: _sendTestNotification,
+          onPressed: () => NotificationService.instance.showLocal(title: 'اختبار', body: 'هذا إشعار تجريبي', alsoCache: true),
           child: const Icon(Icons.send),
         ),
       ),
     );
   }
 }
-

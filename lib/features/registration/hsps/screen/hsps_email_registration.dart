@@ -501,7 +501,6 @@ class _LoginHSPScreenState extends State<LoginHSPScreen> {
                                 context,
                                 MaterialPageRoute(
                                   builder: (context) => CreateHSPPage(
-                                    userCredentials: {},
                                     userType: 'doctor',
                                   ),
                                 ),

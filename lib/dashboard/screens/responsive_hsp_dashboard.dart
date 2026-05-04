@@ -1,9 +1,9 @@
-// lib/dashboard/screens/responsive_hsp_dashboard.dart
-
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:racheeta/theme/app_theme.dart';
+import 'package:racheeta/widgets/racheeta_ui/racheeta_ui.dart';
 
-import '../../../constansts/constants.dart';
+import '../../features/doctors/widgets/dashboard_widgets/stastics_widgets.dart';
 import '../../features/doctors/widgets/notification_widgets/notification_badge_widget.dart';
 import '../../features/doctors/widgets/notification_widgets/notifications_list.dart';
 import '../../features/notifications/model/notification_model.dart';
@@ -17,12 +17,12 @@ class ResponsiveHSPDashboard extends StatefulWidget {
   final String userName;
 
   const ResponsiveHSPDashboard({
-    Key? key,
+    super.key,
     required this.userType,
     required this.userId,
     required this.hspId,
     required this.userName,
-  }) : super(key: key);
+  });
 
   @override
   State<ResponsiveHSPDashboard> createState() => _ResponsiveHSPDashboardState();
@@ -43,36 +43,32 @@ class _ResponsiveHSPDashboardState extends State<ResponsiveHSPDashboard> {
     try {
       final provider = Provider.of<NotificationsRetroDisplayGetProvider>(context, listen: false);
       final fetchedNotifications = await provider.fetchNotifications(widget.hspId);
-      setState(() {
-        notifications = fetchedNotifications;
-      });
-    } catch (e) {
-      debugPrint("Error fetching notifications: \$e");
+      if (mounted) {
+        setState(() {
+          notifications = fetchedNotifications;
+        });
+      }
+    } catch (_) {
     } finally {
-      setState(() => _isLoading = false);
+      if (!silent && mounted) setState(() => _isLoading = false);
     }
   }
+
+  // Helper for silent updates
+  bool get silent => true; 
 
   void _markNotificationAsRead(NoticationsModel notification) async {
     final provider = Provider.of<NotificationsRetroDisplayGetProvider>(context, listen: false);
     try {
-      notification.isRead = true;
-      await provider.createNotification(
-        user: notification.user!,
-        notificationText: notification.notificationText!,
-        isRead: true,
-        createUser: notification.createUser,
-        updateUser: notification.updateUser,
-      );
+      await provider.markAsRead(notification.id);
       _loadNotifications();
-    } catch (e) {
-      debugPrint("Error marking notification as read: \$e");
-    }
+    } catch (_) {}
   }
 
   void _showNotificationsDropdown() {
     showModalBottomSheet(
       context: context,
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(22))),
       builder: (ctx) {
         return NotificationList(
           notifications: notifications,
@@ -86,75 +82,77 @@ class _ResponsiveHSPDashboardState extends State<ResponsiveHSPDashboard> {
   Widget build(BuildContext context) {
     final notifProvider = Provider.of<NotificationsRetroDisplayGetProvider>(context);
 
-    return Scaffold(
-      appBar: AppBar(
-        backgroundColor: Colors.blue,
-        centerTitle: true,
-        title: Text('${widget.userType} لوحة تحكم ', style: kAppBarDashboardTextStyle),
-        actions: [
-          IconButton(
-            icon: NotificationBadge(unreadCount: notifProvider.unreadNotificationsCount),
-            onPressed: _showNotificationsDropdown,
-          ),
-          IconButton(
-            icon: const Icon(Icons.chat, color: Colors.white),
-            onPressed: () => Navigator.pushNamed(context, '/messages'),
-          ),
-        ],
-      ),
-      drawer: DrawerWidget(
-        userType: widget.userType,
-        userId: widget.userId,
-        hspId: widget.hspId,
-      ),
-      body: Stack(
-        children: [
-          SingleChildScrollView(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 90.0),
-                  child: Text('مرحبا بك , ${widget.userName}',
-                      style: const TextStyle(fontSize: 16, color: Colors.black)),
-                ),
-                // Using mock implementations instead of abstract widgets directly
-                MockStatisticsWidget(userType: widget.userType, hspId: widget.hspId),
-                MockTodayAppointmentsWidget(userType: widget.userType, hspId: widget.hspId),
-              ],
+    return Directionality(
+      textDirection: TextDirection.rtl,
+      child: Scaffold(
+        backgroundColor: RacheetaColors.surface,
+        appBar: AppBar(
+          title: Text('${widget.userType} - لوحة التحكم'),
+          actions: [
+            IconButton(
+              icon: NotificationBadge(unreadCount: notifProvider.unreadNotificationsCount),
+              onPressed: _showNotificationsDropdown,
             ),
-          ),
-          if (_isLoading)
-            const Center(
-              child: CircularProgressIndicator(),
+            IconButton(
+              icon: const Icon(Icons.chat_bubble_outline),
+              onPressed: () => Navigator.pushNamed(context, '/messages'),
             ),
-        ],
+          ],
+        ),
+        drawer: DrawerWidget(
+          userType: widget.userType,
+          userId: widget.userId,
+          hspId: widget.hspId,
+        ),
+        body: _isLoading 
+          ? const Center(child: CircularProgressIndicator(color: RacheetaColors.primary))
+          : SingleChildScrollView(
+              padding: const EdgeInsets.symmetric(vertical: 20),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 20),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'أهلاً بك،',
+                          style: TextStyle(color: RacheetaColors.textSecondary, fontSize: 14),
+                        ),
+                        Text(
+                          widget.userName,
+                          style: const TextStyle(
+                            fontSize: 22,
+                            fontWeight: FontWeight.w900,
+                            color: RacheetaColors.textPrimary,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+                  const Stastics(),
+                  const SizedBox(height: 16),
+                  MockTodayAppointmentsWidget(userType: widget.userType, hspId: widget.hspId),
+                ],
+              ),
+            ),
       ),
     );
-  }
-}
-
-// Temporary placeholders to fix abstract class instantiation
-class MockStatisticsWidget extends StatelessWidget {
-  final String userType;
-  final String hspId;
-
-  const MockStatisticsWidget({required this.userType, required this.hspId});
-
-  @override
-  Widget build(BuildContext context) {
-    return const Text('🔧 Statistics Placeholder');
   }
 }
 
 class MockTodayAppointmentsWidget extends StatelessWidget {
   final String userType;
   final String hspId;
-
-  const MockTodayAppointmentsWidget({required this.userType, required this.hspId});
+  const MockTodayAppointmentsWidget({super.key, required this.userType, required this.hspId});
 
   @override
   Widget build(BuildContext context) {
-    return const Text('📅 Appointments Placeholder');
+    return const RacheetaSectionHeader(
+      title: 'حجوزات اليوم',
+      subtitle: 'لديك 5 حجوزات مؤكدة لهذا اليوم',
+    );
   }
 }

@@ -76,6 +76,7 @@ class _CreateHSPPageState extends State<CreateHSPPage> {
   int _currentStep = 0;
   bool _isLoading = false;
   String _statusMessage = "";
+  bool _statusIsError = true;
   String? _gpsLocation;
   String? _bio;
   File? _profileImage;
@@ -84,7 +85,7 @@ class _CreateHSPPageState extends State<CreateHSPPage> {
   bool acceptVideoCalls = false;
   bool homeVisit = false;
 
-  int selectedGender = 0; // 0 => 'm', 1 => 'f'
+  int selectedGender = -1; // -1 => not selected, 0 => 'm', 1 => 'f'
 
   String selectedCity = "بغداد";
   String selectedDistrict = "الأعظمية";
@@ -231,14 +232,16 @@ class _CreateHSPPageState extends State<CreateHSPPage> {
     if (widget.userCredentials?['photoUrl'] != null) {
       _loadGoogleProfileImage(widget.userCredentials!['photoUrl']!);
     }
-    _isGmailRegistration = widget.userCredentials?['uid'] != null;
+    final credentials = widget.userCredentials;
+    _firebaseUid = credentials?['uid'];
+    _isGmailRegistration = _firebaseUid != null && _firebaseUid!.isNotEmpty;
 
     // Auto-fill name from Google
     if (_isGmailRegistration) {
       _nameController.text = widget.userCredentials?['name'] ?? '';
     }
     // Auto-fill Gmail credentials
-    if (widget.userCredentials != null) {
+    if (_isGmailRegistration) {
       _isGmailRegistration = true;
       _emailController.text = widget.userCredentials!['email'] ?? '';
       _nameController.text = widget.userCredentials!['name'] ?? '';
@@ -285,6 +288,8 @@ class _CreateHSPPageState extends State<CreateHSPPage> {
   ///هنا يتم ضغط زر المتابعة وسبب المشاكل عند التنقلات بين الفورم
   // Stepper logic
   void _onStepContinue() async {
+    if (_isLoading) return;
+
     // Step 0 => Common user form (profile image optional)
     if (_currentStep == 0) {
       if (_userFormKey.currentState!.validate()) {
@@ -340,7 +345,7 @@ class _CreateHSPPageState extends State<CreateHSPPage> {
       // Submit based on role
       switch (widget.userType) {
         case 'doctor':
-          _submitDoctor(); break;
+          await _submitDoctor(); break;
         case 'nurse':
           _submitNurse(); break;
         case 'physical-therapist':
@@ -461,14 +466,15 @@ class _CreateHSPPageState extends State<CreateHSPPage> {
   }
 
   Widget _buildPhotoButtons() {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.center,
+    return Wrap(
+      alignment: WrapAlignment.center,
+      spacing: 10,
+      runSpacing: 10,
       children: [
         ElevatedButton(
           onPressed: _takePhoto,
           child: const Text("التقط صورة"),
         ),
-        const SizedBox(width: 10),
         ElevatedButton(
           onPressed: _pickImage,
           child: const Text("اختر صورة من المعرض"),
@@ -572,13 +578,25 @@ class _CreateHSPPageState extends State<CreateHSPPage> {
           contentPadding: EdgeInsets.symmetric(vertical: 16, horizontal: 12),
         ),
         validator: (value) {
+          final normalized = _normalizeIraqiPhone(value ?? '');
           if (value == null || value.isEmpty) return 'يرجى إدخال رقم الهاتف';
-          if (!RegExp(r'^[0-9]{10}$').hasMatch(value))
-            return 'يجب أن يكون 10 أرقام (بدون +964)';
+          if (normalized == null) {
+            return 'أدخل الرقم بدون الصفر، مثال: 7XXXXXXXXX';
+          }
+          final digits = value.trim();
+          if (RegExp(r'^(\d)\1+$').hasMatch(digits)) {
+            return 'لا تستخدم رقم وهمي أو مكرر';
+          }
           return null;
         },
       ),
     );
+  }
+
+  String? _normalizeIraqiPhone(String value) {
+    final digits = value.replaceAll(RegExp(r'\D'), '');
+    if (RegExp(r'^7\d{9}$').hasMatch(digits)) return '+964$digits';
+    return null;
   }
 
   /// Step 1 => Specialized Fields
@@ -713,7 +731,7 @@ class _CreateHSPPageState extends State<CreateHSPPage> {
                 setState(() => selectedGender = index);
               },
             ),
-            if (selectedGender == 0)
+            if (selectedGender == -1)
               const Padding(
                 padding: EdgeInsets.all(8.0),
                 child: Text(
@@ -774,7 +792,73 @@ class _CreateHSPPageState extends State<CreateHSPPage> {
 
           // Status message
           if (_statusMessage.isNotEmpty)
-            Text(_statusMessage, style: const TextStyle(color: Colors.red)),
+            _buildStatusPanel(),
+        ],
+      ),
+    );
+  }
+
+  void _setStatus(String message, {bool isError = true}) {
+    if (!mounted) return;
+    setState(() {
+      _statusMessage = message;
+      _statusIsError = isError;
+    });
+  }
+
+  String _friendlyRegistrationError(Object error) {
+    final raw = error.toString().toLowerCase();
+    if (raw.contains('<!doctype html') ||
+        raw.contains('<html') ||
+        raw.contains('server error')) {
+      return 'تعذر إنشاء الحساب بسبب خطأ في خادم التسجيل. المشكلة ليست من البريد أو الهاتف في التطبيق.';
+    }
+    if (raw.contains('phone')) {
+      return 'رقم الهاتف مستخدم أو غير صحيح. تأكد من الرقم أو استخدم رقم آخر.';
+    }
+    if (raw.contains('email') &&
+        (raw.contains('already') || raw.contains('exists') || raw.contains('exist'))) {
+      return 'هذا البريد الإلكتروني مسجل مسبقاً. استخدم بريد آخر أو انتقل إلى تسجيل الدخول.';
+    }
+    if (raw.contains('firebase_uid') || raw.contains('firebase uid')) {
+      return 'حساب Google هذا مرتبط بحساب سابق. استخدم حساب Google آخر أو سجل الدخول بالحساب الموجود.';
+    }
+    if (raw.contains('network') || raw.contains('connection')) {
+      return 'تعذر الاتصال بالخادم. تحقق من الإنترنت وحاول مرة أخرى.';
+    }
+    return 'تعذر إنشاء الحساب. راجع البيانات المدخلة وحاول مرة أخرى.';
+  }
+
+  Widget _buildStatusPanel() {
+    final color = _statusIsError ? Colors.red.shade700 : Colors.teal.shade700;
+    final bgColor = _statusIsError ? Colors.red.shade50 : Colors.teal.shade50;
+    final icon = _statusIsError ? Icons.error_outline : Icons.check_circle_outline;
+
+    return Container(
+      width: double.infinity,
+      margin: const EdgeInsets.only(top: 12),
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: bgColor,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: color.withOpacity(0.35)),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(icon, color: color),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              _statusMessage,
+              textAlign: TextAlign.right,
+              style: TextStyle(
+                color: color,
+                fontWeight: FontWeight.w700,
+                height: 1.35,
+              ),
+            ),
+          ),
         ],
       ),
     );
@@ -816,6 +900,7 @@ class _CreateHSPPageState extends State<CreateHSPPage> {
   /// (1) Submit as DOCTOR
 
   Future<void> _submitDoctor() async {
+    if (_isLoading) return;
     setState(() => _isLoading = true);
     print(">>> [DEBUG] Starting _submitDoctor process");
 
@@ -823,6 +908,7 @@ class _CreateHSPPageState extends State<CreateHSPPage> {
     if (typedAvailabilityTime.isEmpty) {
       setState(() {
         _statusMessage = "يرجى تحديد وقت العمل.";
+        _statusIsError = true;
         _isLoading = false;
       });
       print(">>> [DEBUG] Availability Time is empty. Cannot proceed.");
@@ -836,7 +922,7 @@ class _CreateHSPPageState extends State<CreateHSPPage> {
     final typedName = _nameController.text.trim();
     final typedPassword =
     _isGmailRegistration ? "${DateTime.now().millisecondsSinceEpoch}Rach@!" : _passwordController.text.trim();
-    final typedPhone = _phoneController.text.trim();
+    final typedPhone = _normalizeIraqiPhone(_phoneController.text.trim()) ?? '';
     final typedGender = (selectedGender == 0) ? 'm' : 'f';
     final typedAddress = "$selectedCity - $selectedDistrict";
 
@@ -864,10 +950,14 @@ class _CreateHSPPageState extends State<CreateHSPPage> {
         (!_isGmailRegistration && typedName.isEmpty) ||
         (!_isGmailRegistration && typedPassword.isEmpty) ||
         typedPhone.isEmpty ||
+        selectedGender == -1 ||
         typedSpecialty.isEmpty ||
         typedDegree.isEmpty) {
       setState(() {
-        _statusMessage = "يرجى ملء جميع الحقول المطلوبة.";
+        _statusMessage = typedPhone.isEmpty
+            ? "يرجى إدخال رقم هاتف عراقي صحيح بدون الصفر، مثال: 7XXXXXXXXX."
+            : "يرجى ملء جميع الحقول المطلوبة.";
+        _statusIsError = true;
         _isLoading = false;
       });
       print(">>> [DEBUG] Required fields validation failed.");
@@ -897,7 +987,8 @@ class _CreateHSPPageState extends State<CreateHSPPage> {
 
       if (createdUser == null || createdUser.id == null) {
         setState(() {
-          _statusMessage = "إنشاء المستخدم (Doctor) فشل.";
+          _statusMessage = "تعذر إنشاء حساب الطبيب. تأكد من البيانات وحاول مرة أخرى.";
+          _statusIsError = true;
           _isLoading = false;
         });
         print(">>> [DEBUG] Failed to create user.");
@@ -905,44 +996,22 @@ class _CreateHSPPageState extends State<CreateHSPPage> {
       }
       print(">>> [DEBUG] User created: ${createdUser.toJson()}");
 
-      // 2) Authenticate user (if not Gmail).
-      if (!_isGmailRegistration) {
-        print(">>> [DEBUG] Authenticating user (Doctor)...");
-        final token =
-        await doctorProvider.authenticateUser(typedEmail, typedPassword);
-        if (token == null || token.isEmpty) {
-          setState(() {
-            _statusMessage = "تعذر تسجيل الدخول تلقائياً (Doctor).";
-            _isLoading = false;
-          });
-          print(">>> [DEBUG] User authentication failed.");
-          return;
-        }
-        final prefs = await SharedPreferences.getInstance();
-        await prefs.setString("Login_access_token", token);
-        final tokenProv = Provider.of<TokenProvider>(context, listen: false);
-        tokenProv.updateToken(token);
-        print(">>> [DEBUG] Authentication token saved.");
+      // 2) Authenticate/link the created account, then use that token for
+      // the second POST (/doctor/).
+      final String? token = _isGmailRegistration && _firebaseUid != null
+          ? await _sendFirebaseAuth(typedEmail, _firebaseUid!, typedPassword, context)
+          : await doctorProvider.authenticateUser(typedEmail, typedPassword);
+      if (token == null || token.isEmpty) {
+        setState(() {
+          _statusMessage = "تعذر تسجيل الدخول تلقائياً للطبيب.";
+          _isLoading = false;
+        });
+        print(">>> [DEBUG] Doctor authentication failed.");
+        return;
       }
-
-      // 3) If Gmail, link Firebase UID; otherwise, re-authenticate.
-      if (_isGmailRegistration && _firebaseUid != null) {
-        await _sendFirebaseAuth(
-            typedEmail, _firebaseUid!, typedPassword, context);
-      } else {
-        final token =
-        await doctorProvider.authenticateUser(typedEmail, typedPassword);
-        if (token == null || token.isEmpty) {
-          setState(() {
-            _statusMessage = "Failed to authenticate doctor user.";
-            _isLoading = false;
-          });
-          print(">>> [DEBUG] Re-auth for doctor user failed.");
-          return;
-        }
-        final prefs = await SharedPreferences.getInstance();
-        await prefs.setString("Login_access_token", token);
-      }
+      await _saveToken(token);
+      doctorProvider.setAuthToken(token);
+      print(">>> [DEBUG] Doctor token saved and provider header updated.");
 
       // 4) Create the Doctor record.
       final typedPriceString = docState?.price ?? "";
@@ -998,6 +1067,7 @@ class _CreateHSPPageState extends State<CreateHSPPage> {
       setState(() {
         _statusMessage =
         "تم إنشاء الطبيب بنجاح برقم المعرف: ${createdDoctor.id}";
+        _statusIsError = false;
       });
       Navigator.pushReplacement(
         context,
@@ -1014,9 +1084,13 @@ class _CreateHSPPageState extends State<CreateHSPPage> {
     } catch (e, stack) {
       print(">>> [DEBUG] Exception in _submitDoctor: $e");
       print("StackTrace: $stack");
-      setState(() => _statusMessage = "Error(doctor): $e");
+      if (mounted) {
+        setState(() => _statusMessage = _friendlyRegistrationError(e));
+      }
     } finally {
-      setState(() => _isLoading = false);
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
       print(">>> [DEBUG] _submitDoctor process completed.");
     }
   }
@@ -1109,52 +1183,24 @@ class _CreateHSPPageState extends State<CreateHSPPage> {
 
       print(">>> [DEBUG] User created successfully: ${createdUser.toJson()}");
 
-      // Step 2: If not Gmail => authenticate user to get token
-      if (!_isGmailRegistration) {
-        print(">>> [DEBUG] Authenticating user (Nurse)...");
-        final token =
-            await doctorProvider.authenticateUser(typedEmail, typedPassword);
-
-        if (token == null || token.isEmpty) {
-          setState(() {
-            _statusMessage = "تعذر تسجيل الدخول تلقائياً (Nurse).";
-            _isLoading = false;
-          });
-          print(">>> [DEBUG] User authentication failed.");
-          return;
-        }
-
-        // Save that token
-        final prefs = await SharedPreferences.getInstance();
-        await prefs.setString("Login_access_token", token);
-        Provider.of<TokenProvider>(context, listen: false).updateToken(token);
-        print(">>> [DEBUG] Nurse token saved (email flow).");
-      }
-
-      ///authenicate
-      // 4) If using Gmail => link the Firebase UID, else authenticate
-      if (_isGmailRegistration && _firebaseUid != null) {
-        await _sendFirebaseAuth(
-            typedEmail, _firebaseUid!, typedPassword, context);
-      } else {
-        final token =
-            await doctorProvider.authenticateUser(typedEmail, typedPassword);
-
-        if (token == null || token.isEmpty) {
-          setState(() {
-            _statusMessage = "Failed to authenticate therapist user.";
-            _isLoading = false;
-          });
-          return;
-        }
-
-        final prefs = await SharedPreferences.getInstance();
-        await prefs.setString("Login_access_token", token);
-      }
-
-      // Step 4: Create the actual nurse record
       final nurseProvider =
           Provider.of<NurseRetroDisplayGetProvider>(context, listen: false);
+      final String? token = _isGmailRegistration && _firebaseUid != null
+          ? await _sendFirebaseAuth(typedEmail, _firebaseUid!, typedPassword, context)
+          : await doctorProvider.authenticateUser(typedEmail, typedPassword);
+      if (token == null || token.isEmpty) {
+        setState(() {
+          _statusMessage = "تعذر تسجيل الدخول تلقائياً للممرضة.";
+          _isLoading = false;
+        });
+        print(">>> [DEBUG] Nurse authentication failed.");
+        return;
+      }
+      await _saveToken(token);
+      await nurseProvider.updateToken(token);
+      print(">>> [DEBUG] Nurse token saved and provider header updated.");
+
+      // Step 4: Create the actual nurse record
       final createdNurse = await nurseProvider.createNurse(
         userModel: createdUser,
         specialty: typedSpecialty,
@@ -1316,32 +1362,25 @@ class _CreateHSPPageState extends State<CreateHSPPage> {
       }
       print(">>> [DEBUG] Therapist user created with ID=${createdUser.id}");
 
-      // 6) If NOT Gmail => normal authentication to get JWT token
-      ///authenicate
-      // 4) If using Gmail => link the Firebase UID, else authenticate
-      if (_isGmailRegistration && _firebaseUid != null) {
-        await _sendFirebaseAuth(
-            typedEmail, _firebaseUid!, typedPassword, context);
-      } else {
-        final token =
-            await doctorProvider.authenticateUser(typedEmail, typedPassword);
-
-        if (token == null || token.isEmpty) {
-          setState(() {
-            _statusMessage = "Failed to authenticate therapist user.";
-            _isLoading = false;
-          });
-          return;
-        }
-
-        final prefs = await SharedPreferences.getInstance();
-        await prefs.setString("Login_access_token", token);
+      final therapistProvider =
+          Provider.of<TherapistRetroDisplayGetProvider>(context, listen: false);
+      final String? token = _isGmailRegistration && _firebaseUid != null
+          ? await _sendFirebaseAuth(typedEmail, _firebaseUid!, typedPassword, context)
+          : await doctorProvider.authenticateUser(typedEmail, typedPassword);
+      if (token == null || token.isEmpty) {
+        setState(() {
+          _statusMessage = "تعذر تسجيل الدخول تلقائياً للمعالج.";
+          _isLoading = false;
+        });
+        print(">>> [DEBUG] Therapist authentication failed.");
+        return;
       }
+      await _saveToken(token);
+      await therapistProvider.updateToken(token);
+      print(">>> [DEBUG] Therapist token saved and provider header updated.");
 
       // 8) Create the therapist record in your backend
       print(">>> [DEBUG] Creating therapist record...");
-      final therapistProvider =
-          Provider.of<TherapistRetroDisplayGetProvider>(context, listen: false);
       final createdTherapist = await therapistProvider.createTherapist(
         userModel: createdUser,
         specialty: typedSpecialty,
@@ -2479,9 +2518,10 @@ class _CreateHSPPageState extends State<CreateHSPPage> {
       return;
     }
     await _saveToken(token);
+    final centerProv = Provider.of<MedicalCentersRetroDisplayGetProvider>(context, listen: false);
+    await centerProv.updateToken(token);
 
     // 4) CREATE THE CENTER (nested user JSON)
-    final centerProv = Provider.of<MedicalCentersRetroDisplayGetProvider>(context, listen: false);
     print('>>> [POST] createMedicalCenterWithUser');
     final createdCenter = await centerProv.createMedicalCenterWithUser(
       user             : createdUser.toJson(),

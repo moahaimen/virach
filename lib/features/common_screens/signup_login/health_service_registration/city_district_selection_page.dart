@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
 
-import '../../../../models/medicals/bagdhad_districts_list.dart';
-
 class CityDistrictSelection extends StatefulWidget {
   final String selectedCity;
   final String selectedDistrict;
@@ -115,6 +113,7 @@ class _CityDistrictSelectionState extends State<CityDistrictSelection> {
           Expanded(
             flex: 3,
             child: DropdownButtonFormField<String>(
+              isExpanded: true,
               value: districts.contains(widget.selectedDistrict)
                   ? widget.selectedDistrict
                   : null,
@@ -124,6 +123,7 @@ class _CityDistrictSelectionState extends State<CityDistrictSelection> {
                   child: Text(
                     district,
                     overflow: TextOverflow.ellipsis,
+                    maxLines: 1,
                   ),
                 );
               }).toList(),

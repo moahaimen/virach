@@ -43,23 +43,12 @@ class LabsRetroDisplayGetProvider with ChangeNotifier {
   }) async {
     print(">>> [createLaboratory] Starting lab creation...");
 
-    final Map<String, dynamic> userPayload = {
-      "id": userModel.id,
-      "email": userModel.email,
-      "full_name": userModel.fullName,
-      "role": userModel.role,
-      "profile_image": userModel.profileImage,
-      "gps_location": userModel.gpsLocation,
-      "phone_number": userModel.phoneNumber,
-      "is_active": userModel.isActive ?? true,
-      "is_staff": userModel.isStaff ?? false,
-      "gender": userModel.gender,
-      "availability_time": availabilityTime,
-      "firebase_uid": userModel.firebaseUid,
-    };
+    if (userModel.id == null || userModel.id!.isEmpty) {
+      throw ArgumentError('Cannot create laboratory without a created user id');
+    }
 
     final laboratoryData = {
-      "user": userPayload,
+      "user": {"id": userModel.id},
       "laboratory_name": laboratoryName,
       "available_tests": availableTests,
       "bio": bio,

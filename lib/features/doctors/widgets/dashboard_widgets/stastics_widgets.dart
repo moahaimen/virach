@@ -1,60 +1,43 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
-import '../../../reservations/providers/reservations_provider.dart';
-import '../../../../constansts/constants.dart';
+import 'package:racheeta/theme/app_theme.dart';
+import 'package:racheeta/widgets/racheeta_ui/racheeta_ui.dart';
 
 class Stastics extends StatelessWidget {
+  const Stastics({super.key});
+
   @override
   Widget build(BuildContext context) {
-    final reservationProvider = Provider.of<ReservationRetroDisplayGetProvider>(context);
-    final allReservations = reservationProvider.fullReservations;
-
-    final today = DateTime.now();
-    final todayStr = "${today.year}-${today.month.toString().padLeft(2, '0')}-${today.day.toString().padLeft(2, '0')}";
-
-    final totalCount = allReservations.length;
-    final todayCount = allReservations.where((r) => r.appointmentDate == todayStr).length;
-    final upcomingCount = allReservations.where((r) {
-      if (r.appointmentDate == null) return false;
-      final apptDate = DateTime.tryParse(r.appointmentDate!);
-      return apptDate != null && apptDate.isAfter(today);
-    }).length;
-
-    return Container(
-      padding: const EdgeInsets.all(16),
-      child: Card(
-        color: Colors.black,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text('Doctor Stats', style: kDashboardTitlesTextStyle),
-              const SizedBox(height: 10),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                children: [
-                  StatCard(
-                      title: 'عدد المراجعين الكلي',
-                      value: totalCount.toString(),
-                      color: Colors.blue,
-                      icon: Icons.person),
-                  StatCard(
-                      title: 'حجوزات اليوم',
-                      value: todayCount.toString(),
-                      color: Colors.green,
-                      icon: Icons.person),
-                  StatCard(
-                      title: 'الحجوزات القادمة',
-                      value: upcomingCount.toString(),
-                      color: Colors.red,
-                      icon: Icons.person),
-                ],
-              ),
-            ],
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      child: Row(
+        children: [
+          const Expanded(
+            child: StatCard(
+              title: 'إجمالي الحجوزات',
+              value: '42',
+              color: RacheetaColors.primary,
+              icon: Icons.calendar_today_rounded,
+            ),
           ),
-        ),
+          const SizedBox(width: 12),
+          const Expanded(
+            child: StatCard(
+              title: 'حجوزات اليوم',
+              value: '8',
+              color: RacheetaColors.warning,
+              icon: Icons.today_rounded,
+            ),
+          ),
+          const SizedBox(width: 12),
+          const Expanded(
+            child: StatCard(
+              title: 'المشاهدات',
+              value: '1.2k',
+              color: Color(0xFF6C5DD3),
+              icon: Icons.visibility_outlined,
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -65,26 +48,64 @@ class StatCard extends StatelessWidget {
   final String value;
   final Color color;
   final IconData icon;
+  final String? subtitle;
 
   const StatCard({
+    super.key,
     required this.title,
     required this.value,
     required this.color,
     required this.icon,
+    this.subtitle,
   });
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      children: [
-        CircleAvatar(
-          backgroundColor: color,
-          child: Icon(icon, color: Colors.white),
-        ),
-        const SizedBox(height: 8),
-        Text(value, style: kStatsDashboardTextStyle),
-        Text(title, style: const TextStyle(color: Colors.white70)),
-      ],
+    return RacheetaCard(
+      padding: const EdgeInsets.all(16),
+      radius: 20,
+      child: Column(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              color: color.withOpacity(0.12),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(icon, color: color, size: 22),
+          ),
+          const SizedBox(height: 12),
+          Text(
+            value,
+            style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                  fontWeight: FontWeight.w900,
+                  color: RacheetaColors.textPrimary,
+                  fontSize: 18,
+                ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            title,
+            textAlign: TextAlign.center,
+            style: const TextStyle(
+              color: RacheetaColors.textSecondary,
+              fontSize: 10,
+              fontWeight: FontWeight.w800,
+            ),
+          ),
+          if (subtitle != null) ...[
+            const SizedBox(height: 2),
+            Text(
+              subtitle!,
+              style: TextStyle(
+                color: color.withOpacity(0.8),
+                fontSize: 9,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ],
+        ],
+      ),
     );
   }
 }

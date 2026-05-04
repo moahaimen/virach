@@ -1,11 +1,11 @@
 import 'dart:math';
-
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:racheeta/theme/app_theme.dart';
+import 'package:racheeta/widgets/racheeta_ui/racheeta_ui.dart';
 import 'package:racheeta/features/labrotary/models/labs_model.dart';
 import 'package:racheeta/features/pharmacist/providers/pharma_provider.dart';
 import '../common_screens/search_filters_pages/hsp/hsp_card.dart';
-// Models
 import '../beauty_centers/models/beauty_centers_model.dart';
 import '../beauty_centers/providers/beauty_centers_provider.dart';
 import '../common_screens/search_filters_pages/hsp/screens/filter_page.dart';
@@ -26,41 +26,33 @@ import '../therapist/providers/therapist_provider.dart';
 import 'hsp_profile_reservation_screen.dart';
 
 class HSPSearchScreen extends StatefulWidget {
-  final String hspType; // Type of HSP (Hospital, Clinic, Pharmacy, etc.)
-
-  HSPSearchScreen({required this.hspType});
+  final String hspType;
+  const HSPSearchScreen({super.key, required this.hspType});
 
   @override
-  _HSPSearchScreenState createState() => _HSPSearchScreenState();
+  State<HSPSearchScreen> createState() => _HSPSearchScreenState();
 }
 
 class _HSPSearchScreenState extends State<HSPSearchScreen> {
-  List<dynamic> allHSPs = []; // Data from backend
-  List<dynamic> filteredHSPs = [];
-  bool isLoading = false;
+  List<dynamic> allHSPs = [];
+  List<Map<String, dynamic>> filteredHSPs = [];
+  bool isLoading = true;
   final TextEditingController _searchController = TextEditingController();
   String _currentSortCriterion = 'none';
-  bool _isLoading = true;
   Map<String, dynamic> _currentFilters = {
-    'sex_male'          : false,
-    'sex_female'        : false,
-
-    'degree_consultant' : false,
-    'degree_specialist' : false,
-
-    'price_min'         : null,   // double
-    'price_max'         : null,   // double
-
-    'address_kw'        : '',     // substring search
-
-    'min_rating'        : 0.0,
-    'available_morning' : false,
-    'available_evening' : false,
-    'home_visit'        : false,
-    'sentinel_only'     : false,
+    'sex_male': false,
+    'sex_female': false,
+    'degree_consultant': false,
+    'degree_specialist': false,
+    'price_min': null,
+    'price_max': null,
+    'address_kw': '',
+    'min_rating': 0.0,
+    'available_morning': false,
+    'available_evening': false,
+    'home_visit': false,
+    'sentinel_only': false,
   };
-
-
 
   @override
   void initState() {
@@ -68,154 +60,75 @@ class _HSPSearchScreenState extends State<HSPSearchScreen> {
     _fetchHSPs();
     _searchController.addListener(_filterHSPs);
   }
-  double _randRating() {
-    return (Random().nextDouble() * 1.25 + 3.0).clamp(0.0, 5.0); // Between 3.0 and 4.25
-  }
 
+  double _randRating() => (Random().nextDouble() * 1.25 + 3.7).clamp(0.0, 5.0);
+  int _randReviews() => Random().nextInt(151) + 50;
 
-  ///_applyMockReviewsIfNeeded
-  void _applyMockReviewsIfNeeded(List<dynamic> hsps) {
-    for (final hsp in hsps) {
-      if (hsp is DoctorModel) {
-        hsp.reviewsAvg ??= _randRating();
-        hsp.reviewsCount ??= Random().nextInt(151) + 50;
-      } else {
-        // Attach mock reviews as map if not present
-        final map = _convertModelToMap(hsp);
-        map['rating'] ??= _randRating();
-        map['numReviews'] ??= Random().nextInt(151) + 50;
-      }
-    }
-  }
-
-///_injectMockRating
-  void _injectMockRating(dynamic model) {
-    final rand = Random();
-
-    final double mockRating = (rand.nextDouble() * 1.25 + 3.0).clamp(0.0, 5.0);
-    final int mockCount = rand.nextInt(151) + 50;
-
-    if (model is Map) {
-      model['rating'] ??= mockRating;
-      model['numReviews'] ??= mockCount;
-    } else {
-      try {
-        if (model.rating == null || model.rating <= 0) {
-          model.rating = mockRating;
-        }
-        if (model.numReviews == null || model.numReviews <= 0) {
-          model.numReviews = mockCount;
-        }
-      } catch (_) {}
-    }
-  }
-
-  // The main fetch function
   Future<void> _fetchHSPs() async {
-    setState(() {
-      isLoading = true;
-    });
-
-    print("Fetching data for HSP type: ${widget.hspType}");
-
+    setState(() => isLoading = true);
     try {
       final type = widget.hspType;
-
       if (type == 'Hospital') {
-        final provider = Provider.of<HospitalRetroDisplayGetProvider>(context, listen: false);
-        await provider.fetchHospitals();
-        _applyMockReviewsIfNeeded(provider.hospitals); // ✅
-        allHSPs = provider.hospitals;
+        final p = context.read<HospitalRetroDisplayGetProvider>();
+        await p.fetchHospitals();
+        allHSPs = p.hospitals;
       } else if (type == 'BeautyCenter') {
-        final provider = Provider.of<BeautyCentersRetroDisplayGetProvider>(context, listen: false);
-        await provider.fetchBeautyCenters();
-        _applyMockReviewsIfNeeded(provider.beautyCenters); // ✅
-        allHSPs = provider.beautyCenters;
+        final p = context.read<BeautyCentersRetroDisplayGetProvider>();
+        await p.fetchBeautyCenters();
+        allHSPs = p.beautyCenters;
       } else if (type == 'Pharmacy') {
-        final provider = Provider.of<PharmaRetroDisplayGetProvider>(context, listen: false);
-        await provider.fetchPharmacies();
-        _applyMockReviewsIfNeeded(provider.pharmacies); // ✅
-        allHSPs = provider.pharmacies;
+        final p = context.read<PharmaRetroDisplayGetProvider>();
+        await p.fetchPharmacies();
+        allHSPs = p.pharmacies;
       } else if (type == 'Therapist') {
-        final provider = Provider.of<TherapistRetroDisplayGetProvider>(context, listen: false);
-        await provider.fetchTherapists();
-        _applyMockReviewsIfNeeded(provider.therapists); // ✅
-        allHSPs = provider.therapists;
+        final p = context.read<TherapistRetroDisplayGetProvider>();
+        await p.fetchTherapists();
+        allHSPs = p.therapists;
       } else if (type == 'MedicalCenter') {
-        final provider = Provider.of<MedicalCentersRetroDisplayGetProvider>(context, listen: false);
-        await provider.fetchMedicalCenters();
-        _applyMockReviewsIfNeeded(provider.medicalCenters); // ✅
-        allHSPs = provider.medicalCenters;
+        final p = context.read<MedicalCentersRetroDisplayGetProvider>();
+        await p.fetchMedicalCenters();
+        allHSPs = p.medicalCenters;
       } else if (type == 'Nurse') {
-        final provider = Provider.of<NurseRetroDisplayGetProvider>(context, listen: false);
-        await provider.fetchNurses();
-        _applyMockReviewsIfNeeded(provider.nurses); // ✅
-        allHSPs = provider.nurses;
+        final p = context.read<NurseRetroDisplayGetProvider>();
+        await p.fetchNurses();
+        allHSPs = p.nurses;
       } else if (type == 'Labrotary') {
-        final provider = Provider.of<LabsRetroDisplayGetProvider>(context, listen: false);
-        await provider.fetchLaboratories();
-        _applyMockReviewsIfNeeded(provider.labs); // ✅
-        allHSPs = provider.labs;
+        final p = context.read<LabsRetroDisplayGetProvider>();
+        await p.fetchLaboratories();
+        allHSPs = p.labs;
       } else if (type == 'Dentist') {
-        final provider = Provider.of<DoctorRetroDisplayGetProvider>(context, listen: false);
-        await provider.getDoctorsBySpecialty("اسنان");
-        _applyMockReviewsIfNeeded(provider.doctors); // ✅
-        allHSPs = provider.doctors;
+        final p = context.read<DoctorRetroDisplayGetProvider>();
+        await p.getDoctorsBySpecialty("اسنان");
+        allHSPs = p.doctors;
       } else if (type == 'psychologist') {
-        final provider = Provider.of<DoctorRetroDisplayGetProvider>(context, listen: false);
-        await provider.getDoctorsBySpecialty("نفسية");
-        _applyMockReviewsIfNeeded(provider.doctors); // ✅
-        allHSPs = provider.doctors;
+        final p = context.read<DoctorRetroDisplayGetProvider>();
+        await p.getDoctorsBySpecialty("نفسية");
+        allHSPs = p.doctors;
       } else if (type == 'xsonarrays') {
-        final provider = Provider.of<DoctorRetroDisplayGetProvider>(context, listen: false);
-        await provider.fetchAllDoctors();
-
-        final targetSpecialties = [
-          'اشعة وسونار',
-          'اشعة',
-          'سونار',
-          'رنين',
-          'مفراس'
-        ];
-
-        final filtered = provider.doctors.where((doctor) {
-          return targetSpecialties.any((s) =>
-          doctor.specialty?.toLowerCase().contains(s.toLowerCase()) ?? false);
-        }).toList();
-
-        _applyMockReviewsIfNeeded(filtered); // ✅
-        allHSPs = filtered;
+        final p = context.read<DoctorRetroDisplayGetProvider>();
+        await p.fetchAllDoctors();
+        final targets = ['اشعة وسونار', 'اشعة', 'سونار', 'رنين', 'مفراس'];
+        allHSPs = p.doctors.where((d) => targets.any((s) => d.specialty?.toLowerCase().contains(s.toLowerCase()) ?? false)).toList();
       } else if (type == 'internationaldoctor') {
-        final provider = Provider.of<DoctorRetroDisplayGetProvider>(context, listen: false);
-        await provider.fetchInternationalDoctorsLocally();
-        _applyMockReviewsIfNeeded(provider.doctors); // ✅
-        allHSPs = provider.doctors;
+        final p = context.read<DoctorRetroDisplayGetProvider>();
+        await p.fetchInternationalDoctorsLocally();
+        allHSPs = p.doctors;
+      } else if (type == 'veterinarian') {
+        final p = context.read<DoctorRetroDisplayGetProvider>();
+        await p.getDoctorsBySpecialty("بيطري");
+        allHSPs = p.doctors;
       }
 
-      // Sort: ads on top
       allHSPs.sort((a, b) {
         final aAdv = (a is Map ? a['advertise'] : (a.advertise ?? false)) ? 1 : 0;
         final bAdv = (b is Map ? b['advertise'] : (b.advertise ?? false)) ? 1 : 0;
         return bAdv - aAdv;
       });
-      for (var hsp in allHSPs) {
-        _injectMockRating(hsp);
-      }
-
-    } catch (e) {
-      print("❌ Error fetching data: $e");
-    }
-
+    } catch (_) {}
     _filterHSPs();
-    setState(() {
-      isLoading = false;
-    });
+    if (mounted) setState(() => isLoading = false);
   }
 
-
-
-
-  /// Apply search, rating, address, and gender filters
   void _filterHSPs() {
     final String q = _searchController.text.toLowerCase();
     final double minRating = (_currentFilters['min_rating'] as double?) ?? 0.0;
@@ -223,413 +136,320 @@ class _HSPSearchScreenState extends State<HSPSearchScreen> {
     final bool maleOnly = _currentFilters['sex_male'] == true;
     final bool femaleOnly = _currentFilters['sex_female'] == true;
 
+    if (!mounted) return;
     setState(() {
-      filteredHSPs = allHSPs.where((hsp) {
-        final m = _convertModelToMap(hsp);
-
-        // 1) Name search
-        final String name = _extractName(m).toLowerCase();
-        if (!name.contains(q)) return false;
-
-        // 2) Rating filter
-        final double r = (m['rating'] as double?) ?? 0.0;
-        if (r < minRating) return false;
-
-        // 3) Address filter
-        final String addr = (m['address'] as String?)?.toLowerCase() ?? '';
-        if (addrKw.isNotEmpty && !addr.contains(addrKw)) return false;
-
-        // 4) Gender filter (if active)
-        final String? g = (m['gender'] as String?) ?? (m['user']?['gender'] as String?);
-        if (maleOnly   && g != 'm') return false;
-        if (femaleOnly && g != 'f') return false;
-
-        // 5) (keep your sentinel_only, home_visit, etc. checks here)
-
-        return true;
-      })
-      // convert each model to a uniform Map
+      filteredHSPs = allHSPs
+          .where((hsp) {
+            final m = _convertModelToMap(hsp);
+            final String name = _extractName(m).toLowerCase();
+            if (!name.contains(q)) return false;
+            final double r = (m['rating'] as double?) ?? 0.0;
+            if (r < minRating) return false;
+            final String addr = (m['address'] as String?)?.toLowerCase() ?? '';
+            if (addrKw.isNotEmpty && !addr.contains(addrKw)) return false;
+            final String? g = (m['gender'] as String?) ?? (m['user']?['gender'] as String?);
+            if (maleOnly && g != 'm') return false;
+            if (femaleOnly && g != 'f') return false;
+            return true;
+          })
           .map(_convertModelToMap)
           .toList();
-
-      // re–apply the current sort
       _sortHSPs(_currentSortCriterion);
     });
   }
 
-  /// Turn any of our various model types into a uniform Map and ensure `rating` exists
   Map<String, dynamic> _convertModelToMap(dynamic model) {
     final Map<String, dynamic> m = {};
-
     if (model is PharmaModel) {
       m.addAll({
-        'id'          : model.id,
-        'hspType'     : 'Pharmacy',
-        'pharmacyName': model.pharmacyName,
-        'bio'         : model.bio,
-        'address'     : model.address,
-        'advertise'   : model.advertise,
-        'profileImage': model.profileImage,
-        'phoneNumber' : model.user?.phoneNumber,
-        'gpsLocation' : model.gpsLocation ?? model.user?.gpsLocation,
-        'gender'      : model.user?.gender,
-        'degree'      : null,
-        'sentinel'    : model.sentinel ?? false,
+        'id': model.id,
+        'hspType': 'Pharmacy',
+        'name': model.pharmacyName ?? model.user?.fullName ?? 'اسم غير معروف',
+        'specialty': 'صيدلية',
+        'bio': model.bio ?? '',
+        'address': model.address ?? '',
+        'advertise': model.advertise ?? false,
+        'profileImage': model.profileImage ?? model.user?.profileImage ?? '',
+        'phone': model.user?.phoneNumber ?? '',
+        'phoneNumber': model.user?.phoneNumber ?? '',
+        'gps_location': model.gpsLocation ?? model.user?.gpsLocation ?? '',
+        'gpsLocation': model.gpsLocation ?? model.user?.gpsLocation ?? '',
+        'availabilityTime': 'غير متوفر',
+        'rating': _randRating(),
+        'reviewsCount': _randReviews(),
+        'gender': model.user?.gender, 'sentinel': model.sentinel ?? false,
       });
-    }
-    else if (model is HospitalModel) {
+    } else if (model is HospitalModel) {
       m.addAll({
-        'id'               : model.id,
-        'hspType'          : 'Hospital',
-        'hospitalName'     : model.hospitalName,
-        'bio'              : model.bio,
-        'address'          : model.address,
-        'specialty'        : model.specialty,
-        'availabilityTime' : model.availabilityTime,
-        'advertise'        : model.advertise,
-        'profileImage'     : model.profileImage,
-        'phoneNumber'      : model.user?.phoneNumber,
-        'gpsLocation'      : model.gpsLocation,
-        'gender'           : null,
-        'degree'           : null,
-        'homeVisit'        : false,
+        'id': model.id,
+        'hspType': 'Hospital',
+        'name': model.hospitalName ?? model.user?.fullName ?? 'اسم غير معروف',
+        'specialty': model.specialty ?? 'مستشفى',
+        'bio': model.bio ?? '',
+        'address': model.address ?? '',
+        'advertise': model.advertise ?? false,
+        'profileImage': model.user?.profileImage ?? '',
+        'phone': model.phoneNumber ?? model.user?.phoneNumber ?? '',
+        'phoneNumber': model.phoneNumber ?? model.user?.phoneNumber ?? '',
+        'gps_location': model.gpsLocation ?? model.user?.gpsLocation ?? '',
+        'gpsLocation': model.gpsLocation ?? model.user?.gpsLocation ?? '',
+        'availabilityTime': model.availabilityTime ?? 'غير متوفر',
+        'rating': _randRating(),
+        'reviewsCount': _randReviews(),
       });
-    }
-    else if (model is BeautyCentersModel) {
+    } else if (model is DoctorModel) {
       m.addAll({
-        'id'              : model.id,
-        'hspType'         : 'BeautyCenter',
-        'beautyCenterName': model.centerName,
-        'bio'             : model.bio,
-        'address'         : model.address,
-        'advertise'       : model.advertise,
-        'profileImage'    : model.profileImage,
-        'phoneNumber'     : model.user?.phoneNumber,
-        'gpsLocation'     : model.gpsLocation,
-        'gender'          : null,
-        'degree'          : null,
-        'homeVisit'       : false,
-      });
-    }
-
-    else if (model is TherapistModel) {
-      m.addAll({
-        'id'               : model.id,
-        'hspType'          : 'Therapist',
-        'therapistName'    : model.user?.fullName,
-        'bio'              : model.bio,
-        'specialty'        : model.specialty,
-        'address'          : model.address,
-        'availabilityTime' : model.availabilityTime,
-        'advertise'        : model.advertise,
-        'profileImage'     : model.user?.profileImage,
-        'phoneNumber'      : model.user?.phoneNumber,
-        'gpsLocation'      : model.user?.gpsLocation,
-        'gender'           : model.user?.gender,
-        'degree'           : null,
-        'homeVisit'        : false,
-      });
-    }
-    else if (model is MedicalCentersModel) {
-      m.addAll({
-        'id'               : model.id,
-        'hspType'          : 'MedicalCenter',
-        'centerName'       : model.centerName,
-        'bio'              : model.bio,
-        'address'          : model.address,
-        'availabilityTime' : model.availabilityTime,
-        'advertise'        : model.advertise,
-        'profileImage'     : model.profileImage,
-        'phoneNumber'      : model.phoneNumber,
-        'gpsLocation'      : model.gpsLocation,
-        'gender'           : null,
-        'degree'           : null,
-        'homeVisit'        : false,
-      });
-    }
-    else if (model is NurseModel) {
-      m.addAll({
-        'id'               : model.id,
-        'hspType'          : 'Nurse',
-        'nurseName'        : model.user?.fullName,
-        'bio'              : model.bio,
-        'address'          : model.address,
-        'availabilityTime' : model.availabilityTime,
-        'advertise'        : model.advertise,
-        'profileImage'     : model.user?.profileImage,
-        'phoneNumber'      : model.user?.phoneNumber,
-        'gpsLocation'      : model.user?.gpsLocation,
-        'gender'           : model.user?.gender,
-        'degree'           : null,
-        'homeVisit'        : false,
-      });
-    }
-    else if (model is LabsModel) {
-      m.addAll({
-        'id'               : model.id,
-        'hspType'          : 'Labrotary',
-        'laboratoryName'   : model.laboratoryName,
-        'bio'              : model.bio,
-        'address'          : model.address,
-        'availabilityTime' : model.availabilityTime,
-        'advertise'        : model.advertise,
-        'profileImage'     : model.user?.profileImage,
-        'phoneNumber'      : model.user?.phoneNumber,
-        'gpsLocation'      : model.user?.gpsLocation,
-        'gender'           : model.user?.gender,
-        'degree'           : null,
-        'homeVisit'        : false,
-      });
-    }
-    else if (model is DoctorModel) {
-      m.addAll({
-        'id'               : model.id,
-        'hspType'          : 'Doctor',
-        'user'             : {
-          'fullName'       : model.user?.fullName,
-          'profileImage'   : model.user?.profileImage,
+        'id': model.id,
+        'hspType': 'Doctor',
+        'name': model.user?.fullName ?? 'اسم غير معروف',
+        'user': {
+          'fullName': model.user?.fullName,
+          'profileImage': model.user?.profileImage,
+          'phoneNumber': model.user?.phoneNumber,
+          'gpsLocation': model.user?.gpsLocation,
+          'gender': model.user?.gender,
         },
-        'bio'              : model.bio,
-        'address'          : model.address,
-        'specialty'        : model.specialty,
-        'availabilityTime' : model.availabilityTime,
-        'advertise'        : model.advertise,
-        'advertisePrice'   : model.advertisePrice,
-        'rating'           : model.reviewsAvg,
-        'phoneNumber'      : model.user?.phoneNumber,
-        'gpsLocation'      : model.user?.gpsLocation,
-        'gender'           : model.user?.gender,
-        'degree'           : model.degrees,
-        'homeVisit'        : (model.voiceCall == true || model.videoCall == true),
+        'bio': model.bio ?? '',
+        'address': model.address ?? '',
+        'specialty': model.specialty ?? 'طبيب',
+        'advertise': model.advertise ?? false,
+        'rating': model.reviewsAvg ?? _randRating(),
+        'reviewsCount': model.reviewsCount ?? _randReviews(),
+        'profileImage': model.user?.profileImage ?? '',
+        'phone': model.user?.phoneNumber ?? '',
+        'phoneNumber': model.user?.phoneNumber ?? '',
+        'gps_location': model.user?.gpsLocation ?? '',
+        'gpsLocation': model.user?.gpsLocation ?? '',
+        'availabilityTime': model.availabilityTime ?? 'غير متوفر',
+        'gender': model.user?.gender,
+        'degree': model.degrees,
       });
-    }
-    else {
-      // fallback for any other type
+    } else if (model is BeautyCentersModel) {
       m.addAll({
-        'hspType'   : 'Unknown',
-        'address'   : '',
-        'advertise' : false,
+        'id': model.id,
+        'hspType': 'BeautyCenter',
+        'name': model.centerName ?? model.user?.fullName ?? 'اسم غير معروف',
+        'specialty': 'مركز تجميل',
+        'bio': model.bio ?? '',
+        'address': model.address ?? '',
+        'advertise': model.advertise ?? false,
+        'profileImage': model.profileImage ?? '',
+        'phone': model.user?.phoneNumber ?? '',
+        'phoneNumber': model.user?.phoneNumber ?? '',
+        'gps_location': model.gpsLocation ?? model.user?.gpsLocation ?? '',
+        'gpsLocation': model.gpsLocation ?? model.user?.gpsLocation ?? '',
+        'availabilityTime': model.availabilityTime ?? 'غير متوفر',
+        'rating': _randRating(),
+        'reviewsCount': _randReviews(),
       });
+    } else if (model is MedicalCentersModel) {
+      m.addAll({
+        'id': model.id,
+        'hspType': 'MedicalCenter',
+        'name': model.centerName ?? model.fullName ?? 'اسم غير معروف',
+        'specialty': 'مركز طبي',
+        'bio': model.bio ?? '',
+        'address': model.address ?? '',
+        'advertise': model.advertise ?? false,
+        'profileImage': model.profileImage ?? '',
+        'phone': model.phoneNumber ?? '',
+        'phoneNumber': model.phoneNumber ?? '',
+        'gps_location': model.gpsLocation ?? '',
+        'gpsLocation': model.gpsLocation ?? '',
+        'availabilityTime': model.availabilityTime ?? 'غير متوفر',
+        'rating': _randRating(),
+        'reviewsCount': _randReviews(),
+      });
+    } else if (model is NurseModel) {
+      m.addAll({
+        'id': model.id,
+        'hspType': 'Nurse',
+        'name': model.user?.fullName ?? 'اسم غير معروف',
+        'specialty': model.specialty ?? 'تمريض',
+        'bio': model.bio ?? '',
+        'address': model.address ?? '',
+        'advertise': model.advertise ?? false,
+        'profileImage': model.user?.profileImage ?? '',
+        'phone': model.user?.phoneNumber ?? '',
+        'phoneNumber': model.user?.phoneNumber ?? '',
+        'gps_location': model.user?.gpsLocation ?? '',
+        'gpsLocation': model.user?.gpsLocation ?? '',
+        'availabilityTime': model.availabilityTime ?? 'غير متوفر',
+        'rating': _randRating(),
+        'reviewsCount': _randReviews(),
+        'gender': model.user?.gender,
+      });
+    } else if (model is LabsModel) {
+      m.addAll({
+        'id': model.id,
+        'hspType': 'Labrotary',
+        'name': model.laboratoryName ?? model.user?.fullName ?? 'اسم غير معروف',
+        'specialty': model.availableTests ?? 'مختبر',
+        'bio': model.bio ?? '',
+        'address': model.address ?? '',
+        'advertise': model.advertise ?? false,
+        'profileImage': model.profileImage ?? model.user?.profileImage ?? '',
+        'phone': model.phoneNumber ?? model.user?.phoneNumber ?? '',
+        'phoneNumber': model.phoneNumber ?? model.user?.phoneNumber ?? '',
+        'gps_location': model.gpsLocation ?? model.user?.gpsLocation ?? '',
+        'gpsLocation': model.gpsLocation ?? model.user?.gpsLocation ?? '',
+        'availabilityTime': model.availabilityTime ?? 'غير متوفر',
+        'rating': _randRating(),
+        'reviewsCount': _randReviews(),
+      });
+    } else if (model is TherapistModel) {
+      m.addAll({
+        'id': model.id,
+        'hspType': 'Therapist',
+        'name': model.user?.fullName ?? 'اسم غير معروف',
+        'specialty': model.specialty ?? 'علاج طبيعي',
+        'bio': model.bio ?? '',
+        'address': model.address ?? '',
+        'advertise': model.advertise ?? false,
+        'profileImage': model.profileImage ?? model.user?.profileImage ?? '',
+        'phone': model.user?.phoneNumber ?? '',
+        'phoneNumber': model.user?.phoneNumber ?? '',
+        'gps_location': model.user?.gpsLocation ?? '',
+        'gpsLocation': model.user?.gpsLocation ?? '',
+        'availabilityTime': model.availabilityTime ?? 'غير متوفر',
+        'rating': _randRating(),
+        'reviewsCount': _randReviews(),
+        'gender': model.user?.gender,
+      });
+    } else {
+      m.addAll({'hspType': 'Unknown', 'address': '', 'advertise': false});
     }
-
-    if (!m.containsKey('rating') || m['rating'] == null) {
-      m['rating'] = _randRating(); // double between 3.0 - 4.25
-    }
-    if (!m.containsKey('numReviews') || m['numReviews'] == null) {
-      m['numReviews'] = Random().nextInt(151) + 50; // int between 50 - 200
-    }
-
-
+    m['rating'] ??= _randRating();
+    m['reviewsCount'] ??= _randReviews();
+    m['numReviews'] ??= m['reviewsCount'];
     return m;
   }
 
-
-  // Sorting omitted for brevity, but you can keep it if you use it
-
-  void _onMap() {
-    Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (context) => HspsMapScreen(hspType: widget.hspType),
-      ),
-    );
-  }
-
-  void _onFilter() {
-    Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (_) => HSPFilterPage(
-          hspType:        widget.hspType.toLowerCase(),
-          currentFilters: _currentFilters,
-          onApplyFilters: _onApplyFilters,
-        ),
-      ),
-    );
-  }
-
-
-
-
-  void _onApplyFilters(Map<String, dynamic> newFilters) {
-    print("✅ Filters applied: $newFilters");
-    setState(() {
-      _currentFilters = newFilters;
-    });
-    _filterHSPs();
-  }
-
-
-  @override
-  void dispose() {
-    _searchController.dispose();
-    super.dispose();
-  }
-
-  String translateHspType(String hspType) {
-    // For display in AppBar
-    final translations = {
-      'BeautyCenter': 'مركز تجميل',
-      'Hospital': 'مستشفى',
-      'Pharmacy': 'صيدلية',
-      'Therapist': 'معالج',
-      'MedicalCenter': 'مركز طبي',
-      'Nurse': 'ممرضة',
-      'Labrotary': 'مختبر',
-      'Dentist': 'طبيب أسنان',
-      'psychologist': 'طبيب نفسي',
-      'internationaldoctor': 'طبيب دولي',
-      'xsonarrays': 'اختصاصات الأشعة',
-      'Doctor': 'طبيب',
-    };
-    return translations[hspType] ?? hspType;
-  }
-  // ───────────────────────── NAME HELPER ─────────────────────────
   String _extractName(Map<String, dynamic> hsp) {
-    return  hsp['hospitalName']       ??
-        hsp['pharmacyName']       ??
-        hsp['centerName']         ??
-        hsp['beautyCenterName']   ??
-        hsp['nurseName']          ??
-        hsp['therapistName']      ??
-        hsp['laboratoryName']     ??
-        hsp['user']?['fullName']  ??
-        '';
+    return (hsp['name'] ??
+            hsp['hospitalName'] ??
+            hsp['pharmacyName'] ??
+            hsp['centerName'] ??
+            hsp['beautyCenterName'] ??
+            hsp['nurseName'] ??
+            hsp['therapistName'] ??
+            hsp['laboratoryName'] ??
+            hsp['user']?['fullName'] ??
+            '')
+        .toString();
   }
 
-// ───────────────────────── SORTING CORE ─────────────────────────
   void _sortHSPs(String criterion) {
-    _currentSortCriterion = criterion;                // remember choice
-
+    _currentSortCriterion = criterion;
     filteredHSPs.sort((a, b) {
-      // ── force the correct generic type ──
-      final Map<String, dynamic> mapA =
-      (a is Map<String, dynamic>) ? a : _convertModelToMap(a);
-
-      final Map<String, dynamic> mapB =
-      (b is Map<String, dynamic>) ? b : _convertModelToMap(b);
-
       switch (criterion) {
-        case 'name_asc':
-          return _extractName(mapA).toLowerCase()
-              .compareTo(_extractName(mapB).toLowerCase());
-
-        case 'name_desc':
-          return _extractName(mapB).toLowerCase()
-              .compareTo(_extractName(mapA).toLowerCase());
-
-        case 'rating_desc':
-          return (mapB['rating'] ?? 0).compareTo(mapA['rating'] ?? 0);
-
-        case 'rating_asc':
-          return (mapA['rating'] ?? 0).compareTo(mapB['rating'] ?? 0);
-
-        default: // advertise first
-          final aAdv = (mapA['advertise'] ?? false) ? 1 : 0;
-          final bAdv = (mapB['advertise'] ?? false) ? 1 : 0;
+        case 'name_asc': return _extractName(a).compareTo(_extractName(b));
+        case 'name_desc': return _extractName(b).compareTo(_extractName(a));
+        case 'rating_desc': return (b['rating'] ?? 0).compareTo(a['rating'] ?? 0);
+        case 'rating_asc': return (a['rating'] ?? 0).compareTo(b['rating'] ?? 0);
+        default:
+          final aAdv = (a['advertise'] ?? false) ? 1 : 0;
+          final bAdv = (b['advertise'] ?? false) ? 1 : 0;
           return bAdv - aAdv;
       }
     });
+  }
 
-    setState(() {});                                   // rebuild UI
+  @override
+  Widget build(BuildContext context) {
+    return Directionality(
+      textDirection: TextDirection.rtl,
+      child: Scaffold(
+        backgroundColor: RacheetaColors.surface,
+        appBar: AppBar(
+          title: Text('البحث عن ${translateHspType(widget.hspType)}'),
+          backgroundColor: Colors.white,
+          elevation: 0,
+        ),
+        body: Column(
+          children: [
+            Container(
+              padding: const EdgeInsets.fromLTRB(16, 16, 16, 20),
+              color: Colors.white,
+              child: Column(
+                children: [
+                  TextField(
+                    controller: _searchController,
+                    decoration: InputDecoration(
+                      hintText: 'ابحث بالاسم...',
+                      prefixIcon: const Icon(Icons.search, color: RacheetaColors.primary),
+                      fillColor: RacheetaColors.surface,
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide.none),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  FilterSortButtons(
+                    onFilter: () => Navigator.push(context, MaterialPageRoute(builder: (_) => HSPFilterPage(hspType: widget.hspType.toLowerCase(), currentFilters: _currentFilters, onApplyFilters: (f) { setState(() => _currentFilters = f); _filterHSPs(); }))),
+                    onSort: _showSortOptions,
+                    onMap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => HspsMapScreen(hspType: widget.hspType))),
+                    hspType: widget.hspType,
+                  ),
+                ],
+              ),
+            ),
+            Expanded(
+              child: isLoading
+                  ? const Center(child: CircularProgressIndicator(color: RacheetaColors.primary))
+                  : filteredHSPs.isEmpty
+                      ? const RacheetaEmptyState(icon: Icons.search_off_outlined, title: "لا توجد نتائج", subtitle: "جرب تغيير معايير البحث أو التصفية.")
+                      : ListView.builder(
+                          padding: const EdgeInsets.all(16),
+                          itemCount: filteredHSPs.length,
+                          itemBuilder: (context, index) => HSPCard(
+                            hsp: filteredHSPs[index],
+                            onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => HSPProfileReservationPage(hsp: filteredHSPs[index]))),
+                          ),
+                        ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
   void _showSortOptions() {
     showModalBottomSheet(
       context: context,
-      builder: (_) => Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          ListTile(
-            leading: const Icon(Icons.sort_by_alpha),
-            title: const Text('الاسم (أ → ي)'),
-            onTap: () { Navigator.pop(context); _sortHSPs('name_asc'); },
-          ),
-          ListTile(
-            leading: const Icon(Icons.sort_by_alpha),
-            title: const Text('الاسم (ي → أ)'),
-            onTap: () { Navigator.pop(context); _sortHSPs('name_desc'); },
-          ),
-          ListTile(
-            leading: const Icon(Icons.star),
-            title: const Text('الأعلى تقييماً'),
-            onTap: () { Navigator.pop(context); _sortHSPs('rating_desc'); },
-          ),
-          ListTile(
-            leading: const Icon(Icons.star_border),
-            title: const Text('الأدنى تقييماً'),
-            onTap: () { Navigator.pop(context); _sortHSPs('rating_asc'); },
-          ),
-        ],
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(22))),
+      builder: (_) => Padding(
+        padding: const EdgeInsets.symmetric(vertical: 24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Text('ترتيب النتائج حسب', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 16)),
+            const SizedBox(height: 16),
+            _sortTile('الاسم (أ → ي)', 'name_asc', Icons.sort_by_alpha_outlined),
+            _sortTile('الاسم (ي → أ)', 'name_desc', Icons.sort_by_alpha_outlined),
+            _sortTile('الأعلى تقييماً', 'rating_desc', Icons.star_outline),
+            _sortTile('الأدنى تقييماً', 'rating_asc', Icons.star_border_outlined),
+          ],
+        ),
       ),
     );
   }
 
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        backgroundColor: Colors.blue,
-        title: Text(
-          'البحث عن ${translateHspType(widget.hspType)}',
-          style:
-              const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
-        ),
-      ),
-      body: Column(
-        children: [
-          // Search field
-          Padding(
-            padding: const EdgeInsets.all(8.0),
-            child: TextField(
-              controller: _searchController,
-              decoration: InputDecoration(
-                hintText: 'ابحث عن الاسم',
-                prefixIcon: const Icon(Icons.search),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(10),
-                ),
-              ),
-            ),
-          ),
-          const SizedBox(height: 10),
-          // Filter/Sort Buttons
-          FilterSortButtons(
-            onFilter: _onFilter,
-            onSort  : _showSortOptions,   // ✅ open the modal
-            onMap   : _onMap,
-            hspType : widget.hspType,
-          ),
-
-          // List or loading
-          Expanded(
-            child: isLoading
-                ? const Center(child: CircularProgressIndicator())
-                : filteredHSPs.isEmpty
-                    ? Center(
-                        child: Text('No ${widget.hspType} available'),
-                      )
-                    : ListView.builder(
-                        itemCount: filteredHSPs.length,
-                        itemBuilder: (context, index) {
-                          final hsp = filteredHSPs[index];
-                          print("Displaying HSP: $hsp");
-                          return HSPCard(
-                            hsp: hsp,
-                            onTap: () {
-                              print("HSP Card Tapped: $hsp");
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) =>
-                                      HSPProfileReservationPage(hsp: hsp),
-                                ),
-                              );
-                            },
-                          );
-                        },
-                      ),
-          ),
-        ],
-      ),
+  Widget _sortTile(String label, String value, IconData icon) {
+    final isSelected = _currentSortCriterion == value;
+    return ListTile(
+      leading: Icon(icon, color: isSelected ? RacheetaColors.primary : RacheetaColors.textSecondary),
+      title: Text(label, style: TextStyle(fontWeight: isSelected ? FontWeight.w900 : FontWeight.normal, color: isSelected ? RacheetaColors.primary : RacheetaColors.textPrimary)),
+      onTap: () { Navigator.pop(context); setState(() => _sortHSPs(value)); },
+      trailing: isSelected ? const Icon(Icons.check, color: RacheetaColors.primary) : null,
     );
+  }
+
+  String translateHspType(String hspType) {
+    final t = {
+      'BeautyCenter': 'مركز تجميل', 'Hospital': 'مستشفى', 'Pharmacy': 'صيدلية', 'Therapist': 'معالج',
+      'MedicalCenter': 'مركز طبي', 'Nurse': 'ممرضة', 'Labrotary': 'مختبر', 'Dentist': 'طبيب أسنان',
+      'psychologist': 'طبيب نفسي', 'internationaldoctor': 'طبيب دولي', 'xsonarrays': 'أشعة ورنين', 'Doctor': 'طبيب',
+      'veterinarian': 'بيطري',
+    };
+    return t[hspType] ?? hspType;
   }
 }

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 
 import '../../../notifications/model/notification_model.dart';
 
@@ -18,13 +19,13 @@ class NotificationList extends StatelessWidget {
         final notification = notifications[index];
         return ListTile(
           leading: Icon(
-            notification.isRead ?? false
+            notification.isRead
                 ? Icons.notifications
                 : Icons.notifications_active,
-            color: notification.isRead ?? false ? Colors.grey : Colors.blue,
+            color: notification.isRead ? Colors.grey : Colors.blue,
           ),
-          title: Text(notification.notificationText ?? "No content"),
-          subtitle: Text(notification.createDate ?? "No date available"),
+          title: Text(notification.notificationText),
+          subtitle: Text(DateFormat('yyyy-MM-dd').format(notification.createDate)),
           onTap: () => onNotificationTap(notification),
         );
       },

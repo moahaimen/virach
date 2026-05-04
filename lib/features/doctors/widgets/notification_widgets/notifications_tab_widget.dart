@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 
 import '../../../notifications/model/notification_model.dart';
 
@@ -24,9 +25,9 @@ class NotificationTabs extends StatelessWidget {
           Expanded(
             child: TabBarView(
               children: [
-                _buildNotificationList(),
-                _buildNotificationList(type: "chat"),
-                _buildNotificationList(type: "reservation"),
+                _buildNotificationList(context),
+                _buildNotificationList(context, type: "chat"),
+                _buildNotificationList(context, type: "reservation"),
               ],
             ),
           ),
@@ -35,18 +36,16 @@ class NotificationTabs extends StatelessWidget {
     );
   }
 
-  Widget _buildNotificationList({String? type}) {
-    final filteredNotifications = notifications
-        .where((notification) => type == null || notification == type)
-        .toList();
+  Widget _buildNotificationList(BuildContext context, {String? type}) {
+    final filteredNotifications = notifications.toList();
 
     return ListView.builder(
       itemCount: filteredNotifications.length,
       itemBuilder: (context, index) {
         final notification = filteredNotifications[index];
         return ListTile(
-          title: Text(notification.notificationText ?? "No content"),
-          subtitle: Text(notification.createDate ?? "No date available"),
+          title: Text(notification.notificationText),
+          subtitle: Text(DateFormat('yyyy-MM-dd').format(notification.createDate)),
         );
       },
     );

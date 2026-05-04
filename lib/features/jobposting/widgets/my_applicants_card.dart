@@ -1,98 +1,110 @@
-// lib/features/jobposting/widgets/my_application_card.dart
 import 'package:flutter/material.dart';
-
+import 'package:racheeta/theme/app_theme.dart';
+import 'package:racheeta/widgets/racheeta_ui/racheeta_ui.dart';
 import '../../applicants/models/applicants_model.dart';
 import '../../applicants/models/job_details.dart';
 import '../../jobposting/models/jobposting_model.dart';
 
 class MyApplicationCard extends StatelessWidget {
-  final ApplicantsModel application;        // يحوي jobDetails
-  final JobPostingModel job;                // نسخة سهلة للحقول الأساسية
+  final ApplicantsModel application;
+  final JobPostingModel job;
 
   const MyApplicationCard({
-    Key? key,
+    super.key,
     required this.application,
     required this.job,
-  }) : super(key: key);
+  });
 
-  /*──────────────────────── ألوان الحالة ────────────────────────*/
-  Color get _statusColor => switch (application.applicationStatus) {
-    'accepted' => Colors.green,
-    'rejected' => Colors.red,
-    _          => Colors.grey,
-  };
+  Color get _statusColor => switch (application.applicationStatus?.toLowerCase()) {
+        'accepted' => RacheetaColors.success,
+        'rejected' => RacheetaColors.danger,
+        'pending' => RacheetaColors.warning,
+        _ => RacheetaColors.textSecondary,
+      };
 
-  String get _statusLabel => switch (application.applicationStatus) {
-    'accepted' => 'مقبول',
-    'rejected' => 'مرفوض',
-    _          => 'قيد المراجعة',
-  };
+  String get _statusLabel => switch (application.applicationStatus?.toLowerCase()) {
+        'accepted' => 'مقبول',
+        'rejected' => 'مرفوض',
+        'pending' => 'قيد الانتظار',
+        _ => application.applicationStatus ?? 'قيد المراجعة',
+      };
 
-  /*──────────────────────── ويدجت مفتاح/قيمة ─────────────────────*/
-  Widget _kv(String k, String? v) => Padding(
-    padding: const EdgeInsets.only(bottom: 6),
-    child: Row(
-      children: [
-        Text('$k: ', style: const TextStyle(fontWeight: FontWeight.w600)),
-        Expanded(child: Text(v?.isNotEmpty == true ? v! : '—')),
-      ],
-    ),
-  );
-
-  /*──────────────────────── البناء ───────────────────────────────*/
   @override
   Widget build(BuildContext context) {
-    /// إذا كان الـ backend أرجع jobDetails استخدمه، وإلا fallback إلى JobPostingModel
     final JobDetails? fromDetails = application.jobDetails;
-    final jobTitle       = fromDetails?.jobTitle       ?? job.jobTitle;
-    final location       = fromDetails?.jobLocation    ?? job.jobLocation;
-    final description    = fromDetails?.jobDescription ?? job.jobDescription;
-    final qualifications = fromDetails?.qualifications ?? job.qualifications;
-    final salary         = (fromDetails?.salary ?? job.salary)?.toString();
+    final jobTitle = fromDetails?.jobTitle ?? job.jobTitle;
+    final location = fromDetails?.jobLocation ?? job.jobLocation;
+    final salary = (fromDetails?.salary ?? job.salary)?.toString();
 
-    return Card(
+    return RacheetaCard(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      elevation: 3,
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            /*──────── عنوان الوظيفة ────────*/
-            Center(
-              child: Text(
-                jobTitle ?? 'عنوان غير معروف',
-                style: const TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
+      padding: const EdgeInsets.all(18),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Expanded(
+                child: Text(
+                  jobTitle ?? 'عنوان غير معروف',
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.w900,
+                        color: RacheetaColors.textPrimary,
+                      ),
                 ),
-                textAlign: TextAlign.center,
               ),
-            ),
-            const SizedBox(height: 12),
-            /*──────── تفاصيل الوظيفة ───────*/
-            _kv('الموقع', location),
-            _kv('الراتب', salary),
-            _kv('المؤهلات', qualifications),
-            _kv('الوصف الوظيفي', description),
-            const Divider(height: 24),
-            /*──────── حالة الطلب ───────────*/
-            Row(
-              children: [
-                const Text('حالة الطلب: '),
-                Text(
-                  _statusLabel,
-                  style: TextStyle(
-                    color: _statusColor,
-                    fontWeight: FontWeight.bold,
-                  ),
+              RacheetaStatusChip(
+                label: _statusLabel,
+                color: _statusColor,
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          _infoRow(Icons.location_on_outlined, location ?? 'غير محدد'),
+          const SizedBox(height: 6),
+          _infoRow(Icons.monetization_on_outlined, salary != null ? '$salary د.ع' : 'غير محدد'),
+          const Divider(height: 32, color: RacheetaColors.border),
+          Row(
+            children: [
+              const Icon(Icons.history_outlined, size: 14, color: RacheetaColors.textSecondary),
+              const SizedBox(width: 6),
+              Text(
+                'تاريخ التقديم: ${application.createDate != null ? application.createDate!.split('T').first : "—"}',
+                style: const TextStyle(fontSize: 11, color: RacheetaColors.textSecondary),
+              ),
+              const Spacer(),
+              const Text(
+                'تفاصيل الطلب',
+                style: TextStyle(
+                  color: RacheetaColors.primary,
+                  fontSize: 12,
+                  fontWeight: FontWeight.w800,
                 ),
-              ],
-            ),
-          ],
-        ),
+              ),
+              const SizedBox(width: 4),
+              const Icon(Icons.arrow_back_ios_new, size: 12, color: RacheetaColors.primary),
+            ],
+          ),
+        ],
       ),
+    );
+  }
+
+  Widget _infoRow(IconData icon, String text) {
+    return Row(
+      children: [
+        Icon(icon, size: 14, color: RacheetaColors.textSecondary),
+        const SizedBox(width: 8),
+        Expanded(
+          child: Text(
+            text,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(color: RacheetaColors.textSecondary, fontSize: 13),
+          ),
+        ),
+      ],
     );
   }
 }

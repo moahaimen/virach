@@ -1,13 +1,16 @@
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
-import '../../../../constansts/constants.dart';
+import 'package:racheeta/theme/app_theme.dart';
+import 'package:racheeta/widgets/racheeta_ui/racheeta_ui.dart';
 import '../../../registration/hsps/screen/hsp_login_screen.dart';
 import '../health_service_registration/medical_signup.dart';
 import '../widget/toogle_buttons_widget.dart';
 
 class MedicaWelcomeScreen extends StatefulWidget {
+  const MedicaWelcomeScreen({super.key});
+
   @override
-  _MedicaWelcomeScreenState createState() => _MedicaWelcomeScreenState();
+  State<MedicaWelcomeScreen> createState() => _MedicaWelcomeScreenState();
 }
 
 class _MedicaWelcomeScreenState extends State<MedicaWelcomeScreen> {
@@ -48,11 +51,8 @@ class _MedicaWelcomeScreenState extends State<MedicaWelcomeScreen> {
         selectedRole = 'beauty_center';
         break;
       default:
-        print('No role selected');
         return;
     }
-
-    print('Selected role: $selectedRole'); // Debug print
 
     Navigator.push(
       context,
@@ -61,130 +61,82 @@ class _MedicaWelcomeScreenState extends State<MedicaWelcomeScreen> {
       ),
     );
   }
+
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        backgroundColor: Colors.blue,
-        title: const Text(
-          'مرحبا بكم',
-          style: kAppBarDoctorsTextStyle,
+    return Directionality(
+      textDirection: TextDirection.rtl,
+      child: Scaffold(
+        backgroundColor: RacheetaColors.surface,
+        appBar: AppBar(
+          title: const Text('انضم كـ مقدم خدمة'),
+          backgroundColor: Colors.white,
+          elevation: 0,
         ),
-        centerTitle: true,
-        elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.white),
-          onPressed: () => Navigator.of(context).pop(),
-        ),
-      ),
-      body: SingleChildScrollView(
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
+        body: SingleChildScrollView(
+          padding: const EdgeInsets.all(24.0),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               const Text(
-                'اختر نوع التسجيل:',
-                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                'اختر الفئة التي تنتمي إليها:',
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900, color: RacheetaColors.textPrimary),
                 textAlign: TextAlign.center,
               ),
-              SizedBox(height: 10),
+              const SizedBox(height: 8),
+              const Text(
+                'سنقوم بتخصيص تجربتك بناءً على نوع الخدمة التي تقدمها.',
+                style: TextStyle(fontSize: 14, color: RacheetaColors.textSecondary),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 32),
               GridView.count(
-                crossAxisCount: 3, // 3 columns for more compact layout
+                crossAxisCount: 3,
                 shrinkWrap: true,
-                physics: NeverScrollableScrollPhysics(),
-                crossAxisSpacing: 10,
-                mainAxisSpacing: 10,
-                childAspectRatio: 0.8, // Adjusted to make buttons smaller
+                physics: const NeverScrollableScrollPhysics(),
+                crossAxisSpacing: 12,
+                mainAxisSpacing: 12,
+                childAspectRatio: 0.85,
                 children: [
-                  ToggleButtonItem(
-                    isSelected: _selectedIndex == 1,
-                    onTap: () => _onToggleSelected(1),
-                    iconPath: 'assets/icons/doctor.png',
-                    label: 'طبيب',
-                  ),
-                  ToggleButtonItem(
-                    isSelected: _selectedIndex == 2,
-                    onTap: () => _onToggleSelected(2),
-                    iconPath: 'assets/icons/pharmacist.png',
-                    label: 'صيدلي',
-                  ),
-                  ToggleButtonItem(
-                    isSelected: _selectedIndex == 3,
-                    onTap: () => _onToggleSelected(3),
-                    iconPath: 'assets/icons/phusicaltherapist.png',
-                    label: 'معالج طبيعي',
-                  ),
-                  ToggleButtonItem(
-                    isSelected: _selectedIndex == 4,
-                    onTap: () => _onToggleSelected(4),
-                    iconPath: 'assets/icons/nurse.png',
-                    label: 'ممرض',
-                  ),
-                  ToggleButtonItem(
-                    isSelected: _selectedIndex == 5,
-                    onTap: () => _onToggleSelected(5),
-                    iconPath: 'assets/icons/medical_centre.png',
-                    label: 'مركز طبي',
-                  ),
-                  ToggleButtonItem(
-                    isSelected: _selectedIndex == 6,
-                    onTap: () => _onToggleSelected(6),
-                    iconPath: 'assets/icons/hospital1.png',
-                    label: 'مستشفى',
-                  ),
-                  ToggleButtonItem(
-                    isSelected: _selectedIndex == 7,
-                    onTap: () => _onToggleSelected(7),
-                    iconPath: 'assets/icons/hospital1.png',
-                    label: 'مختبر',
-                  ),
-                  ToggleButtonItem(
-                    isSelected: _selectedIndex == 8,
-                    onTap: () => _onToggleSelected(8),
-                    iconPath: 'assets/icons/beuty.png',
-                    label: 'تجميل',
-                  ),
+                  _toggleItem(1, 'assets/icons/doctor.png', 'طبيب'),
+                  _toggleItem(2, 'assets/icons/pharmacist.png', 'صيدلي'),
+                  _toggleItem(3, 'assets/icons/phusicaltherapist.png', 'معالج طبيعي'),
+                  _toggleItem(4, 'assets/icons/nurse.png', 'ممرض'),
+                  _toggleItem(5, 'assets/icons/medical_centre.png', 'مركز طبي'),
+                  _toggleItem(6, 'assets/icons/hospital1.png', 'مستشفى'),
+                  _toggleItem(7, 'assets/icons/hospital1.png', 'مختبر'),
+                  _toggleItem(8, 'assets/icons/beuty.png', 'تجميل'),
                 ],
               ),
-              SizedBox(height: 10),
-              if (_selectedIndex != -1)
-                SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton(
-                    onPressed: _onContinuePressed,
-                    style: kRedElevatedButtonStyle,
-                    child: const Text(
-                      'اكمل التسجيل',
-                      style: kButtonTextStyle,
-                    ),
-                  ),
+              const SizedBox(height: 40),
+              ElevatedButton(
+                onPressed: _selectedIndex != -1 ? _onContinuePressed : null,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: RacheetaColors.primary,
+                  disabledBackgroundColor: RacheetaColors.border,
                 ),
-              const SizedBox(height: 50),
+                child: const Text('متابعة التسجيل'),
+              ),
+              const SizedBox(height: 32),
               RichText(
                 textAlign: TextAlign.center,
                 text: TextSpan(
-                  text: 'اذا كنت مسجلا بالتطبيق سابقاً اذهب الى ',
-                  style: const TextStyle(
-                      color: Colors.black,
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold), // Default style
+                  text: 'لديك حساب بالفعل؟ ',
+                  style: const TextStyle(color: RacheetaColors.textSecondary, fontSize: 16),
                   children: [
                     TextSpan(
                       text: 'تسجيل الدخول',
                       style: const TextStyle(
-                        color: Colors.blue, fontSize: 16,
-                        fontWeight:
-                            FontWeight.bold, // Blue color for the specific text
-                        decoration:
-                            TextDecoration.underline, // Underline the text
+                        color: RacheetaColors.primary,
+                        fontWeight: FontWeight.bold,
+                        decoration: TextDecoration.underline,
                       ),
                       recognizer: TapGestureRecognizer()
                         ..onTap = () {
                           Navigator.pushReplacement(
                             context,
                             MaterialPageRoute(
-                              builder: (context) => HSPLoginPage(),
+                              builder: (context) => const HSPLoginPage(),
                             ),
                           );
                         },
@@ -194,6 +146,48 @@ class _MedicaWelcomeScreenState extends State<MedicaWelcomeScreen> {
               ),
             ],
           ),
+        ),
+      ),
+    );
+  }
+
+  Widget _toggleItem(int index, String iconPath, String label) {
+    final isSelected = _selectedIndex == index;
+    return GestureDetector(
+      onTap: () => _onToggleSelected(index),
+      child: Container(
+        decoration: BoxDecoration(
+          color: isSelected ? RacheetaColors.primary : Colors.white,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: isSelected ? RacheetaColors.primary : RacheetaColors.border),
+          boxShadow: [
+            if (isSelected)
+              BoxShadow(color: RacheetaColors.primary.withOpacity(0.2), blurRadius: 10, offset: const Offset(0, 4))
+            else
+              BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 4, offset: const Offset(0, 2)),
+          ],
+        ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Image.asset(
+              iconPath,
+              width: 36,
+              height: 36,
+              color: isSelected ? Colors.white : null,
+              errorBuilder: (_, __, ___) => Icon(Icons.medical_services, color: isSelected ? Colors.white : RacheetaColors.primary),
+            ),
+            const SizedBox(height: 10),
+            Text(
+              label,
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.bold,
+                color: isSelected ? Colors.white : RacheetaColors.textPrimary,
+              ),
+            ),
+          ],
         ),
       ),
     );

@@ -52,7 +52,7 @@ class _HomeHero extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(22),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(28),
         gradient: const LinearGradient(
@@ -65,9 +65,9 @@ class _HomeHero extends StatelessWidget {
         ),
         boxShadow: [
           BoxShadow(
-            color: RacheetaColors.primary.withOpacity(0.22),
-            blurRadius: 28,
-            offset: const Offset(0, 14),
+            color: RacheetaColors.primary.withOpacity(0.25),
+            blurRadius: 25,
+            offset: const Offset(0, 12),
           ),
         ],
       ),
@@ -80,17 +80,17 @@ class _HomeHero extends StatelessWidget {
                 width: 54,
                 height: 54,
                 decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.16),
+                  color: Colors.white.withOpacity(0.18),
                   borderRadius: BorderRadius.circular(18),
                   border: Border.all(color: Colors.white.withOpacity(0.2)),
                 ),
                 child: const Icon(
                   Icons.health_and_safety_outlined,
                   color: Colors.white,
-                  size: 30,
+                  size: 32,
                 ),
               ),
-              const SizedBox(width: 12),
+              const SizedBox(width: 14),
               const Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -99,17 +99,17 @@ class _HomeHero extends StatelessWidget {
                       'راجيتة',
                       style: TextStyle(
                         color: Colors.white,
-                        fontSize: 24,
+                        fontSize: 26,
                         fontWeight: FontWeight.w900,
                         height: 1,
                       ),
                     ),
-                    SizedBox(height: 5),
+                    SizedBox(height: 4),
                     Text(
-                      'احجز خدمة صحية بثقة وسرعة',
+                      'سوق الخدمات الصحية العراقي',
                       style: TextStyle(
                         color: Colors.white70,
-                        fontSize: 14,
+                        fontSize: 13,
                         fontWeight: FontWeight.w600,
                       ),
                     ),
@@ -118,12 +118,13 @@ class _HomeHero extends StatelessWidget {
               ),
             ],
           ),
-          const SizedBox(height: 22),
+          const SizedBox(height: 24),
           Text(
             'شنو تحتاج اليوم؟',
             style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                   color: Colors.white,
                   fontWeight: FontWeight.w900,
+                  fontSize: 22,
                 ),
           ),
           const SizedBox(height: 8),
@@ -132,26 +133,27 @@ class _HomeHero extends StatelessWidget {
             style: TextStyle(
               color: Colors.white,
               fontSize: 14.5,
-              height: 1.55,
+              height: 1.5,
             ),
           ),
-          const SizedBox(height: 18),
+          const SizedBox(height: 20),
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 13),
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
             decoration: BoxDecoration(
               color: Colors.white,
-              borderRadius: BorderRadius.circular(18),
+              borderRadius: BorderRadius.circular(16),
             ),
             child: Row(
               children: [
-                const Icon(Icons.search, color: RacheetaColors.primary),
+                const Icon(Icons.search, color: RacheetaColors.primary, size: 22),
                 const SizedBox(width: 10),
                 Expanded(
                   child: Text(
-                    'ابحث عن طبيب، خدمة، مختبر أو عرض',
+                    'ابحث عن طبيب، خدمة، أو عرض...',
                     style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                           color: RacheetaColors.textSecondary,
                           fontWeight: FontWeight.w600,
+                          fontSize: 14,
                         ),
                   ),
                 ),
@@ -159,14 +161,14 @@ class _HomeHero extends StatelessWidget {
                   padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                   decoration: BoxDecoration(
                     color: RacheetaColors.mintLight,
-                    borderRadius: BorderRadius.circular(99),
+                    borderRadius: BorderRadius.circular(10),
                   ),
                   child: const Text(
                     'قريباً',
                     style: TextStyle(
                       color: RacheetaColors.primaryHover,
-                      fontWeight: FontWeight.w800,
-                      fontSize: 12,
+                      fontWeight: FontWeight.w900,
+                      fontSize: 11,
                     ),
                   ),
                 ),
@@ -187,7 +189,7 @@ class _QuickStatsRow extends StatelessWidget {
     final items = [
       _TrustChipData(Icons.verified_user_outlined, 'مزودون موثوقون'),
       _TrustChipData(Icons.event_available_outlined, 'حجز سريع'),
-      _TrustChipData(Icons.local_offer_outlined, 'عروض صحية'),
+      _TrustChipData(Icons.local_offer_outlined, 'عروض حصرية'),
     ];
 
     return Row(
@@ -196,24 +198,25 @@ class _QuickStatsRow extends StatelessWidget {
             (item) => Expanded(
               child: Container(
                 margin: const EdgeInsets.symmetric(horizontal: 4),
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 12),
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 14),
                 decoration: BoxDecoration(
                   color: RacheetaColors.card,
-                  borderRadius: BorderRadius.circular(18),
+                  borderRadius: BorderRadius.circular(20),
                   border: Border.all(color: RacheetaColors.border),
                 ),
                 child: Column(
                   children: [
-                    Icon(item.icon, color: RacheetaColors.primary, size: 22),
-                    const SizedBox(height: 6),
+                    Icon(item.icon, color: RacheetaColors.primary, size: 24),
+                    const SizedBox(height: 8),
                     Text(
                       item.label,
                       textAlign: TextAlign.center,
-                      maxLines: 2,
+                      maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: Theme.of(context).textTheme.labelSmall?.copyWith(
                             fontWeight: FontWeight.w800,
                             color: RacheetaColors.textPrimary,
+                            fontSize: 11,
                           ),
                     ),
                   ],
@@ -240,25 +243,25 @@ class _JobsCtaCard extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16),
       child: Container(
-        padding: const EdgeInsets.all(18),
+        padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(
           color: RacheetaColors.darkSurface,
           borderRadius: BorderRadius.circular(24),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.07),
-              blurRadius: 22,
-              offset: const Offset(0, 10),
+              color: Colors.black.withOpacity(0.08),
+              blurRadius: 15,
+              offset: const Offset(0, 6),
             ),
           ],
         ),
         child: Row(
           children: [
             Container(
-              width: 56,
-              height: 56,
+              width: 58,
+              height: 58,
               decoration: BoxDecoration(
-                color: RacheetaColors.primary.withOpacity(0.18),
+                color: RacheetaColors.primary.withOpacity(0.2),
                 borderRadius: BorderRadius.circular(18),
               ),
               child: const Icon(
@@ -267,7 +270,7 @@ class _JobsCtaCard extends StatelessWidget {
                 size: 30,
               ),
             ),
-            const SizedBox(width: 14),
+            const SizedBox(width: 16),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -276,23 +279,30 @@ class _JobsCtaCard extends StatelessWidget {
                     'وظائف القطاع الصحي',
                     style: TextStyle(
                       color: Colors.white,
-                      fontSize: 17,
+                      fontSize: 18,
                       fontWeight: FontWeight.w900,
                     ),
                   ),
-                  SizedBox(height: 5),
+                  SizedBox(height: 4),
                   Text(
                     'قدّم على فرص عمل منشورة من مزودي الخدمات الصحية.',
-                    style: TextStyle(color: Colors.white70, height: 1.4),
+                    style: TextStyle(
+                      color: Colors.white70,
+                      fontSize: 12,
+                      height: 1.4,
+                    ),
                   ),
                 ],
               ),
             ),
-            const SizedBox(width: 10),
+            const SizedBox(width: 12),
             IconButton.filled(
               style: IconButton.styleFrom(
                 backgroundColor: RacheetaColors.primary,
                 foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(14),
+                ),
               ),
               onPressed: () {
                 Navigator.of(context).push(

@@ -18,10 +18,11 @@ class PharmaRetroDisplayGetProvider with ChangeNotifier {
 
   PharmaRetroDisplayGetProvider(String token) {
     if (token.isEmpty) {
-      throw Exception("Token cannot be empty");
+      dio.options.headers.remove("Authorization");
+    } else {
+      dio.options.headers["Authorization"] = "JWT $token";
     }
     print("Initializing PharmaRetroDisplayGetProvider with token: $token");
-    dio.options.headers["Authorization"] = "JWT $token"; // Correct format
     _apiClient = ApiClient(dio);
   }
   Future<void> updateToken(String newToken) async {
@@ -44,26 +45,13 @@ class PharmaRetroDisplayGetProvider with ChangeNotifier {
   }) async {
     print(">>> [createPharmacy] Starting pharmacy creation...");
 
-    // (B.1) Build the 'user' sub-object
-    final Map<String, dynamic> userPayload = {
-      "id": userModel.id,
-      "email": userModel.email,
-      "full_name": userModel.fullName,
-      "role": userModel.role,
-      "profile_image": userModel.profileImage,
-      "gps_location": userModel.gpsLocation,
-      "phone_number": userModel.phoneNumber,
-      "is_active": userModel.isActive ?? true,
-      "is_staff": userModel.isStaff ?? false,
-      "gender": userModel.gender,
-      "firebase_uid": userModel.firebaseUid,
-      "create_date": userModel.createDate,
-      "update_date": userModel.updateDate,
-    };
+    if (userModel.id == null || userModel.id!.isEmpty) {
+      throw ArgumentError('Cannot create pharmacy without a created user id');
+    }
 
     // (B.2) Build the top-level payload
     final Map<String, dynamic> payload = {
-      "user": userPayload,
+      "user": {"id": userModel.id},
       "pharmacy_name": pharmacyName,
       "bio": bio,
       "address": address,

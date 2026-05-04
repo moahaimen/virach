@@ -3,8 +3,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:racheeta/theme/app_theme.dart';
+import 'package:racheeta/widgets/racheeta_ui/racheeta_ui.dart';
 
-import '../../../constansts/constants.dart';
 import '../../../dashboard/base_today_appointments.dart';
 import '../../../services/notification_service.dart';
 import '../../../token_provider.dart';
@@ -18,16 +19,14 @@ import '../../reservations/providers/reservations_provider.dart';
 import '../../../widgets/dashboard_widget/drawer_widget.dart';
 import '../widgets/medical_centre_stastics_widget.dart';
 
-/// ───────────────────────── "Medical Center" Dashboard ─────────────────────────
-/// Handles both `medical_center` and the typo-ed `mdeidcal_center`.
 class ResponsiveMDCenterDashboard extends StatefulWidget {
   const ResponsiveMDCenterDashboard({
-    Key? key,
-    required this.userId,      // UUID of User record
-    required this.centerId,    // UUID of MedicalCenter record
-    required this.centerName,  // Full name for greeting
-    required this.userType,    // "medical_center" or "mdeidcal_center"
-  }) : super(key: key);
+    super.key,
+    required this.userId,
+    required this.centerId,
+    required this.centerName,
+    required this.userType,
+  });
 
   final String userId;
   final String centerId;
@@ -39,8 +38,6 @@ class ResponsiveMDCenterDashboard extends StatefulWidget {
 }
 
 class _MDCenterDashState extends State<ResponsiveMDCenterDashboard> {
-  final FlutterLocalNotificationsPlugin _fln = FlutterLocalNotificationsPlugin();
-  late final NotificationsRetroDisplayGetProvider _notiProv;
   Timer? _notiTimer;
   Timer? _reservationTimer;
   List<NoticationsModel> _notifications = [];
@@ -49,18 +46,8 @@ class _MDCenterDashState extends State<ResponsiveMDCenterDashboard> {
   @override
   void initState() {
     super.initState();
-    debugPrint('🧠 MDCenterDashboard → userId   = ${widget.userId}');
-    debugPrint('🧠 MDCenterDashboard → centerId = ${widget.centerId}');
-    debugPrint('🧠 MDCenterDashboard → centerName = ${widget.centerName}');
-    debugPrint('🧠 MDCenterDashboard → userType = ${widget.userType}');
-
-    // grab the injected provider
-    _notiProv = context.read<NotificationsRetroDisplayGetProvider>();
-    _initLocalNotifications();
     _refreshAll();
-
-    // poll every 5m for noti, 3m for reservations
-    _notiTimer      = Timer.periodic(const Duration(minutes: 5), (_) => _refreshNotifications(silent: true));
+    _notiTimer = Timer.periodic(const Duration(minutes: 5), (_) => _refreshNotifications(silent: true));
     _reservationTimer = Timer.periodic(const Duration(minutes: 3), (_) => _refreshReservations());
   }
 
@@ -71,159 +58,128 @@ class _MDCenterDashState extends State<ResponsiveMDCenterDashboard> {
     super.dispose();
   }
 
-  Future<void> _initLocalNotifications() async {
-    const android = AndroidInitializationSettings('@mipmap/ic_launcher');
-    const ios     = DarwinInitializationSettings();
-    const settings = InitializationSettings(android: android, iOS: ios);
-    await _fln.initialize(settings);
-  }
-
   Future<void> _refreshAll() async {
     setState(() => _loading = true);
-    await Future.wait([
-      _refreshNotifications(),
-      _refreshReservations(),
-    ]);
+    try {
+      await Future.wait([
+        _refreshNotifications(silent: true),
+        _refreshReservations(),
+      ]);
+    } catch (_) {}
     if (mounted) setState(() => _loading = false);
   }
 
   Future<void> _refreshNotifications({bool silent = false}) async {
-    if (!silent) setState(() => _loading = true);
     try {
-      _notifications = await _notiProv.fetchNotifications(widget.centerId);
-    } catch (e) {
-      debugPrint('[MC-DASH] notification error → $e');
-    }
-    if (!silent && mounted) setState(() => _loading = false);
+      final prov = context.read<NotificationsRetroDisplayGetProvider>();
+      final notes = await prov.fetchNotifications(widget.centerId);
+      if (mounted) setState(() => _notifications = notes);
+    } catch (_) {}
   }
 
   Future<void> _refreshReservations() async {
     try {
       final prov = context.read<ReservationRetroDisplayGetProvider>();
       final reservations = await prov.fetchAllReservationsForServiceProvider(widget.centerId, context);
-      prov.mergeReservations(reservations);  // update internal list
-      debugPrint('[MC-DASH] ✅ Reservations updated for center: ${reservations.length}');
-    } catch (e) {
-      debugPrint('[MC-DASH] reservation error → $e');
-    }
+      prov.mergeReservations(reservations);
+    } catch (_) {}
   }
-
 
   Future<void> _logout() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.clear();
+    if (!mounted) return;
     context.read<TokenProvider>().updateToken('');
-    if (mounted) {
-      Navigator.of(context).pushAndRemoveUntil(
-        MaterialPageRoute(builder: (_) => MedicaWelcomeScreen()),
-            (_) => false,
-      );
-    }
-  }
-
-  Future<void> _sendTestNotification() async {
-    await NotificationService.instance.showLocal(
-      title: 'اختبار',
-      body: 'هذا إشعار تجريبي من لوحة تحكم المركز الطبي',
-      alsoCache: true,
+    Navigator.of(context).pushAndRemoveUntil(
+      MaterialPageRoute(builder: (_) => const MedicaWelcomeScreen()),
+      (_) => false,
     );
   }
 
   void _showNotificationsSheet() {
     showModalBottomSheet(
       context: context,
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(22))),
       builder: (_) => NotificationList(
         notifications: _notifications,
-        onNotificationTap: _markAsRead,
+        onNotificationTap: (n) async {
+          await context.read<NotificationsRetroDisplayGetProvider>().markAsRead(n.id);
+          _refreshNotifications(silent: true);
+        },
       ),
     );
-  }
-
-  Future<void> _markAsRead(NoticationsModel n) async {
-    try {
-      n.isRead = true;
-      await _notiProv.createNotification(
-        user: n.user!,
-        notificationText: n.notificationText!,
-        isRead: true,
-        createUser: n.createUser,
-        updateUser: n.updateUser,
-      );
-      _refreshNotifications(silent: true);
-    } catch (e) {
-      debugPrint('[MC-DASH] mark-as-read error → $e');
-    }
   }
 
   @override
   Widget build(BuildContext context) {
     final unread = context.watch<NotificationsRetroDisplayGetProvider>().unreadNotificationsCount;
 
-    return Scaffold(
-      appBar: AppBar(
-        backgroundColor: Colors.blue,
-        centerTitle: true,
-        title: const Text('لوحة تحكم المركز الطبي', style: kAppBarDashboardTextStyle),
-        actions: [
-          IconButton(
-            icon: NotificationBadge(unreadCount: unread),
-            onPressed: _showNotificationsSheet,
-          ),
-          IconButton(
-            icon: const Icon(Icons.chat),
-            onPressed: () => Navigator.pushNamed(context, '/messages'),
-          ),
-          IconButton(
-            icon: const Icon(Icons.logout),
-            onPressed: _logout,
-          ),
-        ],
-      ),
-      drawer: DrawerWidget(
-        userType: widget.userType,
-        userId: widget.userId,
-        hspId: widget.centerId,
-      ),
-      body: RefreshIndicator(
-        onRefresh: _refreshAll,
-        child: Stack(
-          children: [
-            SingleChildScrollView(
-              physics: const AlwaysScrollableScrollPhysics(),
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
+    return Directionality(
+      textDirection: TextDirection.rtl,
+      child: Scaffold(
+        backgroundColor: RacheetaColors.surface,
+        appBar: AppBar(
+          title: const Text('لوحة تحكم المركز الطبي'),
+          actions: [
+            IconButton(
+              icon: NotificationBadge(unreadCount: unread),
+              onPressed: _showNotificationsSheet,
+            ),
+            IconButton(
+              icon: const Icon(Icons.chat_bubble_outline),
+              onPressed: () => Navigator.pushNamed(context, '/messages'),
+            ),
+          ],
+        ),
+        drawer: DrawerWidget(
+          userType: widget.userType,
+          userId: widget.userId,
+          hspId: widget.centerId,
+        ),
+        body: RefreshIndicator(
+          onRefresh: _refreshAll,
+          color: RacheetaColors.primary,
+          child: _loading 
+            ? const Center(child: CircularProgressIndicator(color: RacheetaColors.primary))
+            : SingleChildScrollView(
+                physics: const AlwaysScrollableScrollPhysics(),
+                padding: const EdgeInsets.symmetric(vertical: 20),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Center(
-                      child: Text('مرحبا بك , ${widget.centerName}',
-                          style: const TextStyle(fontSize: 18)),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 20),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text('أهلاً بك،', style: TextStyle(color: RacheetaColors.textSecondary, fontSize: 14)),
+                          Text(widget.centerName, style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w900, color: RacheetaColors.textPrimary)),
+                        ],
+                      ),
                     ),
-                    const SizedBox(height: 16),
-                    // your custom MD stats
+                    const SizedBox(height: 24),
                     MDCentersStatistics(),
-                    const SizedBox(height: 24),
-                    // today's reservations
+                    const SizedBox(height: 16),
                     BaseTodayAppointments(
-                      userType : widget.userType,
-                      userId   : widget.userId,
-                      hspId    : widget.centerId,
-                      userName : widget.centerName,
+                      userType: widget.userType,
+                      userId: widget.userId,
+                      hspId: widget.centerId,
+                      userName: widget.centerName,
                     ),
                     const SizedBox(height: 24),
-                    // action buttons (reuse doctor widget)
+                    const Padding(
+                      padding: EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                      child: Text('إجراءات سريعة', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w900, color: RacheetaColors.textPrimary)),
+                    ),
                     ActionButtonsWidget(userType: widget.userType),
                   ],
                 ),
               ),
-            ),
-            if (_loading) const Center(child: CircularProgressIndicator()),
-          ],
         ),
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _sendTestNotification,
-        child: const Icon(Icons.notifications_active),
+        floatingActionButton: FloatingActionButton(
+          onPressed: () => NotificationService.instance.showLocal(title: 'اختبار', body: 'إشعار تجريبي من المركز الطبي', alsoCache: true),
+          child: const Icon(Icons.send),
+        ),
       ),
     );
   }

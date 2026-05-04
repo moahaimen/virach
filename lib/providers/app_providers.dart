@@ -40,6 +40,11 @@ Widget buildAppProviders({
   required SharedPreferences prefs,
   required Widget child,
 }) {
+  final initialToken =
+      prefs.getString("access_token") ??
+      prefs.getString("Login_access_token") ??
+      '';
+
   return MultiProvider(
     providers: [
       Provider<ConnectivityService>(create: (_) => ConnectivityService()),  // ✅
@@ -51,7 +56,7 @@ Widget buildAppProviders({
       // ChangeNotifierProvider(create: (_) => locator<DoctorRetroDisplayGetProvider>()),
 // 2) Then for each HSP provider (example for Doctor):
       ChangeNotifierProxyProvider<TokenProvider, DoctorRetroDisplayGetProvider>(
-        create: (_) => DoctorRetroDisplayGetProvider(''),       // start with empty
+        create: (_) => DoctorRetroDisplayGetProvider(initialToken),
         update: (_, tokenProv, previous) {
           final token = tokenProv.accessToken ?? '';
           if (previous != null) {

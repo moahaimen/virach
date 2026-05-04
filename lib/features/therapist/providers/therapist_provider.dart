@@ -40,24 +40,12 @@ class TherapistRetroDisplayGetProvider with ChangeNotifier {
   }) async {
     print(">>> [createTherapist] Starting therapist creation...");
 
-    final Map<String, dynamic> userPayload = {
-      "id": userModel.id,
-      "email": userModel.email,
-      "full_name": userModel.fullName,
-      "role": userModel.role,
-      "profile_image": userModel.profileImage,
-      "gps_location": userModel.gpsLocation,
-      "phone_number": userModel.phoneNumber,
-      "is_active": userModel.isActive ?? true,
-      "is_staff": userModel.isStaff ?? false,
-      "gender": userModel.gender,
-      "firebase_uid": userModel.firebaseUid,
-      "create_date": userModel.createDate,
-      "update_date": userModel.updateDate,
-    };
+    if (userModel.id == null || userModel.id!.isEmpty) {
+      throw ArgumentError('Cannot create therapist without a created user id');
+    }
 
     final payload = {
-      "user": userPayload,
+      "user": {"id": userModel.id},
       "specialty": specialty,
       "bio": bio,
       "address": address,

@@ -1,21 +1,21 @@
-// lib/features/offers/screens/offer_details_screen.dart
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import '../../../models/offer_model.dart';
-import '../../../constansts/constants.dart';
+import 'package:racheeta/models/offer_model.dart';
+import 'package:racheeta/theme/app_theme.dart';
+import 'package:racheeta/widgets/racheeta_ui/racheeta_ui.dart';
+import 'package:provider/provider.dart';
 import '../services/coupon_services.dart';
 import '../widgets/coupon_sheet_widget.dart';
-import 'package:provider/provider.dart';          //  ← add this line
 
 class OfferDetailsScreen extends StatelessWidget {
   final Offer offer;
-  const OfferDetailsScreen({Key? key, required this.offer}) : super(key: key);
+  const OfferDetailsScreen({super.key, required this.offer});
 
-  // ---------------------------------------------------------------------------
   ImageProvider _img(String path) =>
-      path.startsWith('http') ? NetworkImage(path) : AssetImage(path);
+      (path.startsWith('http') || path.startsWith('https'))
+          ? NetworkImage(path)
+          : AssetImage(path) as ImageProvider;
 
-  /// Translate service-provider type to Arabic.
   String _providerAr(String type) {
     switch (type.toLowerCase()) {
       case 'doctor':
@@ -33,183 +33,244 @@ class OfferDetailsScreen extends StatelessWidget {
     }
   }
 
-  // days-left helper  🔥
   int? _daysLeft(String? isoEnd) {
     if (isoEnd == null) return null;
     final end = DateTime.tryParse(isoEnd);
     if (end == null) return null;
-    final diff = end.difference(DateTime.now()).inDays;
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final diff = end.difference(today).inDays;
     return diff < 0 ? 0 : diff;
   }
 
-  Widget _iconText(IconData icon, String text) => Row(
-        children: [
-          Icon(icon, size: 18, color: Colors.grey[600]),
-          const SizedBox(width: 6),
-          Flexible(
-            child: Text(text,
-                overflow: TextOverflow.ellipsis,
-                style: const TextStyle(fontSize: 15)),
-          ),
-        ],
-      );
-
   @override
   Widget build(BuildContext context) {
-    final w = MediaQuery.of(context).size.width;
-    final imgHeight = w * 0.55; // responsive height
-    final daysLeft = _daysLeft(offer.endDateFormatted); // ⚑ grab once
+    final daysLeft = _daysLeft(offer.endDateFormatted);
 
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(offer.name, style: kAppBarTextStyle),
-        centerTitle: true,
-      ),
-      body: SingleChildScrollView(
-        padding: kSectionPadding,
-        child: Card(
-          margin: kCardMargin,
-          shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(kCardRadius)),
-          elevation: 4,
-          child:
-              Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            // ------------------------- IMAGE -------------------------
-            ClipRRect(
-              borderRadius: const BorderRadius.vertical(
-                  top: Radius.circular(kCardRadius)),
-              child: Image(
-                image: _img(offer.image),
-                width: w,
-                height: imgHeight,
-                fit: BoxFit.cover,
-              ),
-            ),
-
-            Padding(
-              padding: kCardPadding,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // ------------------------ TITLE ------------------------
-                  Text(offer.name, style: kOfferNameTextStyle),
-
-                  // -------------------- PROVIDER TYPE --------------------
-                  const SizedBox(height: 6),
-                  _iconText(Icons.storefront, _providerAr(offer.doctorName)),
-
-                  // -------------------- DESCRIPTION ----------------------
-                  if (offer.description != null &&
-                      offer.description!.isNotEmpty) ...[
-                    const SizedBox(height: 18),
-                    Text('وصف العرض:',
-                        style: const TextStyle(
-                            fontSize: 18, fontWeight: FontWeight.w600)),
-                    const SizedBox(height: 4),
-                    Text(offer.description!,
-                        style: const TextStyle(fontSize: 16)),
-                  ],
-
-                  // -------------------- OFFER TYPE -----------------------
-                  const SizedBox(height: 8),
-                  _iconText(Icons.category, offer.offerType ?? '—'),
-
-                  // -------------------- PRICE ROW ------------------------
-                  const SizedBox(height: 18),
-                  Row(children: [
-                    // discount badge
-                    Container(
-                      padding: kDiscountBadgePadding,
-                      decoration: kDiscountBorderPadding,
-                      child:
-                          Text(offer.discount, style: kOfferDiscountTextStyle),
+    return Directionality(
+      textDirection: TextDirection.rtl,
+      child: Scaffold(
+        backgroundColor: RacheetaColors.surface,
+        body: CustomScrollView(
+          slivers: [
+            SliverAppBar(
+              expandedHeight: 250,
+              pinned: true,
+              backgroundColor: RacheetaColors.primary,
+              iconTheme: const IconThemeData(color: Colors.white),
+              flexibleSpace: FlexibleSpaceBar(
+                background: Stack(
+                  fit: StackFit.expand,
+                  children: [
+                    Image(
+                      image: _img(offer.image),
+                      fit: BoxFit.cover,
+                      errorBuilder: (_, __, ___) => Container(color: RacheetaColors.mintLight),
                     ),
-                    const SizedBox(width: 10),
-
-                    // prices wrapped so they don't overflow
-                    Expanded(
-                      child: Row(children: [
-                        Flexible(
-                          child: Text('${offer.price} د.ع',
-                              overflow: TextOverflow.ellipsis,
-                              style: const TextStyle(
-                                  fontSize: 22,
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.green)),
-                        ),
-                        const SizedBox(width: 6),
-                        if (offer.oldPrice.isNotEmpty)
-                          Flexible(
-                            child: Text('${offer.oldPrice} د.ع',
-                                overflow: TextOverflow.ellipsis,
-                                style: kOfferOldPriceTextStyle),
-                          ),
-                      ]),
-                    ),
-                  ]),
-
-                  // ---------------- PERIOD & DATES ----------------------
-                  const SizedBox(height: 18),
-                  _iconText(
-                      Icons.schedule, 'المدة: ${offer.periodOfTime ?? '—'}'),
-                  const SizedBox(height: 4),
-                  _iconText(Icons.date_range,
-                      'من: ${offer.startDateFormatted ?? '—'}'),
-                  const SizedBox(height: 2),
-                  _iconText(Icons.date_range,
-                      'إلى: ${offer.endDateFormatted ?? '—'}'),
-// days left
-                  // 🔴 days-left indicator
-                  if (daysLeft != null)
-                    Padding(
-                      padding: const EdgeInsets.only(top: 6),
-                      child: Text(
-                        daysLeft == 0 ? 'انتهى العرض' : 'باقي $daysLeft يوم',
-                        style: const TextStyle(
-                          color: Colors.red,
-                          fontWeight: FontWeight.bold,
-                          fontSize: 16,
+                    const DecoratedBox(
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          begin: Alignment.topCenter,
+                          end: Alignment.bottomCenter,
+                          colors: [
+                            Colors.black26,
+                            Colors.transparent,
+                            Colors.black54,
+                          ],
                         ),
                       ),
                     ),
-                  // ------------------ ACTION BTN -----------------------
-                  const SizedBox(height: 24),
-                  SizedBox(
-                    width: double.infinity,
-                    child: ElevatedButton(
-                      onPressed: () async {
-                        // 1) read user’s Arabic full-name from prefs
-                        final prefs     = await SharedPreferences.getInstance();
-                        final userName  = prefs.getString('full_name') ?? 'غير محدد';
-
-                        // 2) create coupon with name + offer
-                        final coupon = await context
-                            .read<CouponService>()
-                            .create(offer: offer, userName: userName);
-
-                        // 3) show the coupon sheet
-                        if (!context.mounted) return;
-                        showModalBottomSheet(
-                          context: context,
-                          isScrollControlled: true,
-                          shape: const RoundedRectangleBorder(
-                            borderRadius: BorderRadius.vertical(top: Radius.circular(12)),
-                          ),
-                          builder: (_) => CouponSheet(offer: offer, coupon: coupon),
-                        );
-                      },
-
-                      style: kBlueButtonStyle,
-                      child: const Text('احصل على العرض',
-                          style: kReservationButtonTextStyle),
-                    ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
-          ]),
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    // Title Card
+                    RacheetaCard(
+                      padding: const EdgeInsets.all(20),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              RacheetaStatusChip(
+                                label: offer.discount,
+                                color: RacheetaColors.danger,
+                              ),
+                              if (daysLeft != null)
+                                Text(
+                                  daysLeft == 0 ? 'انتهى العرض' : 'باقي $daysLeft يوم',
+                                  style: TextStyle(
+                                    color: daysLeft == 0 ? RacheetaColors.danger : RacheetaColors.warning,
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 13,
+                                  ),
+                                ),
+                            ],
+                          ),
+                          const SizedBox(height: 16),
+                          Text(
+                            offer.name,
+                            style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                                  fontWeight: FontWeight.w900,
+                                  color: RacheetaColors.textPrimary,
+                                ),
+                          ),
+                          const SizedBox(height: 8),
+                          Row(
+                            children: [
+                              const Icon(Icons.storefront_outlined, size: 18, color: RacheetaColors.primary),
+                              const SizedBox(width: 8),
+                              Text(
+                                _providerAr(offer.doctorName),
+                                style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
+                              ),
+                              const Spacer(),
+                              const Icon(Icons.star, color: Colors.amber, size: 18),
+                              const SizedBox(width: 4),
+                              Text('${offer.rating}', style: const TextStyle(fontWeight: FontWeight.bold)),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+
+                    // Price Card
+                    RacheetaCard(
+                      padding: const EdgeInsets.all(20),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Text('سعر العرض', style: TextStyle(color: RacheetaColors.textSecondary, fontSize: 12)),
+                              Text(
+                                '${offer.price} د.ع',
+                                style: const TextStyle(
+                                  color: RacheetaColors.primary,
+                                  fontSize: 24,
+                                  fontWeight: FontWeight.w900,
+                                ),
+                              ),
+                            ],
+                          ),
+                          if (offer.oldPrice.isNotEmpty)
+                            Column(
+                              crossAxisAlignment: CrossAxisAlignment.end,
+                              children: [
+                                const Text('السعر الأصلي', style: TextStyle(color: RacheetaColors.textSecondary, fontSize: 12)),
+                                Text(
+                                  '${offer.oldPrice} د.ع',
+                                  style: const TextStyle(
+                                    color: RacheetaColors.textSecondary,
+                                    fontSize: 18,
+                                    decoration: TextDecoration.lineThrough,
+                                  ),
+                                ),
+                              ],
+                            ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+
+                    // Description Card
+                    if (offer.description?.isNotEmpty ?? false) ...[
+                      RacheetaCard(
+                        padding: const EdgeInsets.all(20),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text('تفاصيل العرض', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 16)),
+                            const SizedBox(height: 12),
+                            Text(
+                              offer.description!,
+                              style: const TextStyle(fontSize: 15, height: 1.6, color: RacheetaColors.textPrimary),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                    ],
+
+                    // Info Card
+                    RacheetaCard(
+                      padding: const EdgeInsets.all(20),
+                      child: Column(
+                        children: [
+                          _buildDetailRow(Icons.category_outlined, 'نوع العرض', offer.offerType ?? '—'),
+                          const Divider(height: 24),
+                          _buildDetailRow(Icons.schedule_outlined, 'مدة العرض', offer.periodOfTime ?? '—'),
+                          const Divider(height: 24),
+                          _buildDetailRow(Icons.calendar_today_outlined, 'صلاحية العرض',
+                              'من ${offer.startDateFormatted ?? "—"} إلى ${offer.endDateFormatted ?? "—"}'),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 100), // Space for button
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+        bottomSheet: Container(
+          padding: const EdgeInsets.all(20),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            boxShadow: [
+              BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, -5)),
+            ],
+          ),
+          child: ElevatedButton(
+            onPressed: () async {
+              final prefs = await SharedPreferences.getInstance();
+              final userName = prefs.getString('full_name') ?? 'غير محدد';
+              if (!context.mounted) return;
+              final coupon = await context.read<CouponService>().create(offer: offer, userName: userName);
+
+              if (!context.mounted) return;
+              showModalBottomSheet(
+                context: context,
+                isScrollControlled: true,
+                shape: const RoundedRectangleBorder(
+                  borderRadius: BorderRadius.vertical(top: Radius.circular(22)),
+                ),
+                builder: (_) => CouponSheet(offer: offer, coupon: coupon),
+              );
+            },
+            child: const Text('احصل على العرض الآن'),
+          ),
         ),
       ),
+    );
+  }
+
+  Widget _buildDetailRow(IconData icon, String label, String value) {
+    return Row(
+      children: [
+        Container(
+          padding: const EdgeInsets.all(8),
+          decoration: BoxDecoration(color: RacheetaColors.mintLight, borderRadius: BorderRadius.circular(10)),
+          child: Icon(icon, size: 20, color: RacheetaColors.primary),
+        ),
+        const SizedBox(width: 12),
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(label, style: const TextStyle(color: RacheetaColors.textSecondary, fontSize: 11)),
+            Text(value, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+          ],
+        ),
+      ],
     );
   }
 }
